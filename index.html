@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#fdfaf6">
+
+    <title>Alvorada - 1% todo dia</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #fdfaf6; --card-bg: #ffffff; --title-brown: #a68966;
+            --add-red: #f28482; --check-green: #32cd32; --item-done-bg: #e8f5e9;
+            --stats-green: #7ebc89; --bar-bg: rgba(0,0,0,0.05);
+            --bar-1: #a8dadc; --bar-2: #ffcad4; --bar-3: #b9fbc0;
+            --text-color: #5d5d5d; --date-color: #999;
+            --input-border: #f0f0f0; --delete-red: #e74c3c;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1c22; --card-bg: #2d3039; --text-color: #e0e0e0;
+            --input-border: #3d414d; --title-brown: #c5b299;
+            --bar-bg: rgba(255,255,255,0.15); --item-done-bg: #1b3d2f;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: var(--bg-color); color: var(--text-color);
+            margin: 0; 
+            /* Ajuste para telas com entalhe/notch */
+            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: all 0.4s ease; touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%; max-width: 450px;
+            background: var(--card-bg); padding: 30px; border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-bottom: 20px; position: relative; box-sizing: border-box;
+            margin-top: 20px;
+        }
+
+        header { margin-bottom: 20px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-family: 'Comfortaa', cursive; font-size: 1.5rem; margin: 0; color: var(--title-brown); }
+        #current-date { font-size: 0.8rem; color: var(--date-color); font-weight: 500; text-transform: capitalize; margin-top: 4px; }
+        .streak-badge { font-size: 0.9rem; font-weight: 700; color: #ff9f43; display: flex; align-items: center; gap: 5px; }
+
+        .progress-container { background: var(--bar-bg); border-radius: 20px; height: 14px; margin-bottom: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: width 0.8s ease; }
+        .stats-text { font-size: 0.9rem; text-align: right; margin-bottom: 25px; font-weight: 700; color: var(--stats-green); }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
+        input[type="text"] { flex: 1; padding: 12px; border: 2px solid var(--input-border); background: var(--card-bg); color: var(--text-color); border-radius: 12px; outline: none; font-family: inherit; font-size: 16px !important; }
+        .add-btn { background-color: var(--add-red); border: none; padding: 0 18px; border-radius: 12px; cursor: pointer; color: white; font-size: 1.5rem; font-weight: bold; }
+
+        .todo-list { list-style: none; padding: 0; margin: 0; margin-bottom: 30px; }
+        .item-wrapper { display: flex; align-items: center; margin-bottom: 12px; }
+        .drag-handle { cursor: grab; padding: 10px; color: var(--date-color); font-size: 1.1rem; }
+        .todo-item { flex: 1; background: var(--card-bg); border: 1px solid var(--input-border); padding: 12px 15px; border-radius: 15px; display: flex; align-items: center; transition: 0.3s; }
+        .todo-item.completed { background-color: var(--item-done-bg); border-color: transparent; }
+        .todo-item input[type="checkbox"] { width: 22px; height: 22px; margin-right: 12px; cursor: pointer; accent-color: var(--check-green); }
+        .todo-text { flex: 1; font-weight: 500; outline: none; font-size: 0.95rem; }
+        .completed .todo-text { text-decoration: line-through; opacity: 0.6; }
+        .action-btn { background: none; border: none; cursor: pointer; opacity: 0.4; transition: 0.3s; padding: 5px; }
+        .todo-item:hover .action-btn { opacity: 1; }
+
+        #motivation-quote { font-size: 0.82rem; font-style: italic; color: var(--date-color); text-align: center; border-top: 1px solid var(--input-border); padding-top: 20px; line-height: 1.5; }
+
+        .history-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 10px; max-width: 450px; }
+        .history-day-container { position: relative; }
+        .history-day { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--bar-1); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; cursor: pointer; color: var(--date-color); background: var(--card-bg); transition: 0.2s; }
+        .delete-day-btn { position: absolute; top: -5px; right: -5px; background: var(--delete-red); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid white; opacity: 0; transition: 0.2s; visibility: hidden; z-index: 5; }
+        .history-day-container:hover .delete-day-btn { opacity: 1; visibility: visible; }
+
+        #floating-summary { display: none; position: absolute; z-index: 100; background: var(--card-bg); border: 1px solid var(--title-brown); padding: 15px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 220px; font-size: 0.8rem; pointer-events: none; }
+        .footer-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .utility-btn { background: #5d5d5d; border: none; color: white; padding: 12px 25px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        .theme-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--title-brown); border: none; cursor: pointer; color: white; font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; }
+
+        #print-header-title { display: none; }
+
+        @media print {
+            @page { margin: 0.5cm; }
+            body { background: white !important; padding: 0 !important; font-family: 'Courier Prime', monospace !important; color: black !important; }
+            .theme-toggle, .input-group, .action-btn, .drag-handle, .footer-actions, .history-section, .delete-day-btn, .progress-container, .streak-badge, header { display: none !important; }
+            .container { box-shadow: none !important; border: none !important; width: 100%; max-width: 100%; margin: 0; padding: 10px; }
+            #print-header-title { display: block !important; text-align: center !important; font-size: 1.6rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; width: 100%; }
+            #current-date-print { display: block !important; text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 15px; font-size: 1.1rem; }
+            .todo-list-header { display: flex !important; justify-content: space-between !important; font-weight: bold !important; border-bottom: 1px dashed #000 !important; padding-bottom: 5px !important; margin-bottom: 10px !important; font-size: 1.1rem !important; }
+            .item-wrapper { margin-bottom: 8px; border-bottom: 1px dotted #aaa; display: block !important; }
+            .todo-item { background: none !important; border: none !important; padding: 5px 0 !important; display: flex !important; justify-content: space-between !important; width: 100% !important; }
+            .todo-item input { display: none; }
+            .todo-text { text-decoration: none !important; opacity: 1 !important; color: black !important; font-size: 1.1rem; text-align: left; flex-grow: 1; }
+            .status-col { font-weight: bold; font-size: 1.1rem; text-align: right; min-width: 60px; }
+            #stats { text-align: right; border-top: 2px dashed #000; padding-top: 15px; font-size: 1.4rem; color: black !important; font-weight: bold; margin-bottom: 20px; }
+            #motivation-quote { color: black !important; border: none; margin-top: 20px; font-style: normal; text-transform: uppercase; font-size: 1rem; text-align: center; line-height: 1.2; }
+            .print-footer { display: block !important; text-align: center; margin-top: 30px; border-top: 1px dashed #000; padding-top: 10px; font-weight: bold; font-size: 1.2rem; }
+        }
+        .todo-list-header, .print-footer, #current-date-print { display: none; }
+    </style>
+</head>
+<body onclick="hideSummary(); requestFullScreen();">
+
+<div class="container" id="main-app-container" onclick="event.stopPropagation()">
+    <div id="print-header-title">Relatório de Evolução</div>
+    <div id="current-date-print"></div>
+
+    <header>
+        <div class="header-top">
+            <h1>Alvorada</h1>
+            <div id="streak-display" class="streak-badge">🔥 0 dias</div>
+        </div>
+        <div id="current-date">Aguardando data...</div>
+    </header>
+
+    <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+    <div id="stats" class="stats-text">TOTAL: 0%</div>
+
+    <div class="input-group">
+        <input type="text" id="todo-input" placeholder="O que vamos conquistar hoje?" enterkeyhint="done">
+        <button class="add-btn" onclick="addTodo()">+</button>
+    </div>
+
+    <div class="todo-list-header">
+        <span>TAREFAS</span>
+        <span>STATUS</span>
+    </div>
+    
+    <ul id="todo-list" class="todo-list"></ul>
+
+    <div id="motivation-quote">"O impossível é um punhado de coisas fáceis."</div>
+    
+    <div class="print-footer">
+        OBRIGADA!<br>
+        --------------------------
+    </div>
+</div>
+
+<div class="history-section" onclick="event.stopPropagation()">
+    <div id="history-grid" class="history-grid"></div>
+    <div id="floating-summary"></div>
+    <div class="footer-actions">
+        <button class="utility-btn" onclick="window.print()">📄 SALVAR EM PDF</button>
+    </div>
+</div>
+
+<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+
+<script>
+    const quotes = ["O impossível é um punhado de coisas fáceis.", "A disciplina é a liberdade de ser quem você realmente quer ser.", "O sucesso é a soma de pequenos esforços repetidos dia após dia.", "Não pare até se orgulhar de você.", "Sua rotina define seu futuro.", "Grandes coisas nunca vêm de zonas de conforto.", "Feito é melhor que perfeito.", "A constância vence o talento quando o talento não tem constância.", "Você não precisa ver toda a escada, apenas dê o primeiro passo.", "Foque no progresso, não na perfeição.", "Vença a si mesmo e vencerá o mundo.", "A motivação te faz começar, o hábito te faz continuar.", "Pequenos hábitos, grandes mudanças.", "A paciência e a persistência são aliadas do sucesso.", "Não espere por condições perfeitas, crie-as.", "Seja mais forte que sua melhor desculpa.", "Onde há foco, a energia flui.", "Tudo o que você precisa já está dentro de você.", "Cada dia é uma nova chance de ser 1% melhor.", "A disciplina cura o arrependimento.", "Não reduza seus sonhos, aumente sua determinação."];
+    const today = new Date();
+    const todayStr = today.toLocaleDateString('pt-BR');
+    let db = JSON.parse(localStorage.getItem('alvoradaDB')) || {};
+    let currentTheme = localStorage.getItem('theme') || 'light';
+
+    if (!db[todayStr]) db[todayStr] = { todos: [], percent: 0 };
+
+    function requestFullScreen() {
+        const doc = window.document;
+        const docEl = doc.documentElement;
+        const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+        if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+            requestFullScreen.call(docEl).catch(e => {});
+        }
+    }
+
+    function displayCurrentDate() {
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        const formatted = today.toLocaleDateString('pt-BR', options);
+        document.getElementById('current-date').innerText = formatted;
+        document.getElementById('current-date-print').innerText = formatted;
+    }
+
+    function setRandomQuote() {
+        const quoteElement = document.getElementById('motivation-quote');
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        quoteElement.innerText = `"${quotes[randomIndex]}"`;
+    }
+
+    function updateUI() {
+        const list = document.getElementById('todo-list');
+        list.innerHTML = '';
+        let completed = 0;
+        db[todayStr].todos.forEach((todo, index) => {
+            const wrapper = document.createElement('li');
+            wrapper.className = 'item-wrapper';
+            wrapper.draggable = true;
+            const statusLabel = todo.completed ? "ok" : "--";
+            wrapper.innerHTML = `<div class="drag-handle">☰</div><div class="todo-item ${todo.completed ? 'completed' : ''}"><input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${index})"><span class="todo-text" contenteditable="true" onblur="editTodo(${index}, this.innerText)">${todo.text}</span><span class="status-col">${statusLabel}</span><button class="action-btn" onclick="deleteTodo(${index})">🗑️</button></div>`;
+            wrapper.ondragstart = () => wrapper.classList.add('dragging');
+            wrapper.ondragend = () => { wrapper.classList.remove('dragging'); saveOrder(); };
+            list.appendChild(wrapper);
+            if (todo.completed) completed++;
+        });
+        const percent = db[todayStr].todos.length > 0 ? Math.round((completed / db[todayStr].todos.length) * 100) : 0;
+        if (percent === 100 && db[todayStr].percent < 100) { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); }
+        db[todayStr].percent = percent;
+        document.getElementById('progress-bar').style.width = percent + '%';
+        document.getElementById('stats').innerText = `TOTAL: ${percent}%`;
+        localStorage.setItem('alvoradaDB', JSON.stringify(db));
+        updateStreak();
+        renderHistory();
+    }
+
+    function saveOrder() {
+        const items = [...document.querySelectorAll('.item-wrapper')];
+        db[todayStr].todos = items.map(item => ({ text: item.querySelector('.todo-text').innerText, completed: item.querySelector('input[type="checkbox"]').checked }));
+        updateUI();
+    }
+
+    function renderHistory() {
+        const grid = document.getElementById('history-grid');
+        grid.innerHTML = '';
+        const dates = Object.keys(db).sort();
+        dates.forEach((date, i) => {
+            const container = document.createElement('div');
+            container.className = 'history-day-container';
+            const day = document.createElement('div');
+            day.className = 'history-day';
+            day.style.borderColor = db[date].percent >= 80 ? 'var(--check-green)' : 'var(--bar-1)';
+            day.innerText = i + 1;
+            day.onclick = (e) => showFloatingSummary(e, date);
+            const delBtn = document.createElement('div');
+            delBtn.className = 'delete-day-btn'; delBtn.innerText = 'x';
+            delBtn.onclick = (e) => { e.stopPropagation(); deleteHistoryDay(date); };
+            container.appendChild(day); container.appendChild(delBtn);
+            grid.appendChild(container);
+        });
+    }
+
+    function deleteHistoryDay(date) {
+        if (confirm(`Excluir histórico de ${date}?`)) {
+            delete db[date];
+            if (date === todayStr) db[todayStr] = { todos: [], percent: 0 };
+            updateUI();
+        }
+    }
+
+    function updateStreak() {
+        let streak = 0;
+        const dates = Object.keys(db).sort().reverse();
+        for (let date of dates) {
+            if (db[date].percent >= 80) streak++;
+            else if (date !== todayStr) break;
+        }
+        document.getElementById('streak-display').innerText = `🔥 ${streak} dias`;
+    }
+
+    function showFloatingSummary(e, date) {
+        const panel = document.getElementById('floating-summary');
+        let html = `<b>Resumo de ${date}</b><br><br>`;
+        db[date].todos.forEach(t => { html += `<div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;"><span>${t.text}</span><span>${t.completed ? 'ok' : ''}</span></div>`; });
+        panel.innerHTML = html;
+        panel.style.display = 'block';
+        panel.style.left = Math.min(window.innerWidth - 230, Math.max(10, e.pageX - 110)) + 'px';
+        panel.style.top = (e.pageY - panel.offsetHeight - 20) + 'px';
+        e.stopPropagation();
+    }
+
+    function hideSummary() { document.getElementById('floating-summary').style.display = 'none'; }
+    function addTodo() {
+        const input = document.getElementById('todo-input');
+        if (!input.value.trim()) return;
+        db[todayStr].todos.push({ text: input.value, completed: false });
+        input.value = '';
+        updateUI();
+    }
+    function deleteTodo(index) { db[todayStr].todos.splice(index, 1); updateUI(); }
+    function toggleTodo(index) { db[todayStr].todos[index].completed = !db[todayStr].todos[index].completed; updateUI(); }
+    function editTodo(index, newText) { db[todayStr].todos[index].text = newText; localStorage.setItem('alvoradaDB', JSON.stringify(db)); }
+
+    function toggleTheme() {
+        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        localStorage.setItem('theme', currentTheme);
+        document.getElementById('theme-btn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', currentTheme === 'light' ? '#fdfaf6' : '#1a1c22');
+    }
+
+    document.getElementById('todo-list').addEventListener('dragover', e => {
+        e.preventDefault();
+        const dragging = document.querySelector('.dragging');
+        const list = document.getElementById('todo-list');
+        const afterElement = [...list.querySelectorAll('.item-wrapper:not(.dragging)')].reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = e.clientY - box.top - box.height / 2;
+            return offset < 0 && offset > closest.offset ? { offset: offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+        afterElement ? list.insertBefore(dragging, afterElement) : list.appendChild(dragging);
+    });
+
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.getElementById('theme-btn').innerText = currentTheme === 'light' ? '🌙' : '☀️';
+    displayCurrentDate(); setRandomQuote(); updateUI();
+
+    document.getElementById('todo-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { addTodo(); document.activeElement.blur(); }
+    });
+</script>
+</body>
+</html>
