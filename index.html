@@ -1,118 +1,122 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"> <title>Alvorada - Painel do Agente</title>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"> <title>Alvorada - Gestão Tática</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script> <style>
-        /* --- DESIGN HARMONIOSO E CORES PASTÉIS --- */
+        /* --- DESIGN HARMONIOSO E CORES PASTÉIS (ESTILO SMARTPHONE) --- */
         :root {
-            --bg-deep: #1a1c24; /* Fundo Dark Profundo */
-            --card-dark: #2d3039; /* Card Principal */
-            --pastel-brown: #d4a373; /* Título Pastel */
-            --pastel-blue: #a8dadc;  /* Progresso Inicial */
-            --pastel-pink: #ffcad4;  /* Progresso Médio / Botão + */
-            --pastel-green: #b9fbc0; /* Progresso Final / Check */
-            --text-main: #ffffff;
-            --text-dim: #94a3b8;
+            --bg-dark: #1a1c24; /* Fundo Dark Profundo conforme imagem */
+            --card-surface: #2d3039; /* Superfície do Board */
+            --pastel-gold: #d4a373; /* Título Alvorada */
+            --pastel-blue: #a8dadc; /* Progresso 0-30% */
+            --pastel-pink: #f28482; /* Progresso 31-70% / Botão + */
+            --pastel-green: #b9fbc0; /* Progresso 71-100% / Check */
+            --text-white: #ffffff;
+            --text-gray: #94a3b8;
         }
 
         body {
-            font-family: 'Quicksand', sans-serif; background-color: var(--bg-deep); color: var(--text-main);
+            font-family: 'Quicksand', sans-serif; background-color: var(--bg-dark); color: var(--text-white);
             margin: 0; padding: env(safe-area-inset-top) 20px 100px 20px;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            overflow-x: hidden; transition: background 0.4s ease;
+            overflow-x: hidden; transition: filter 0.4s ease;
         }
 
-        /* Container Principal com Dimensionamento Excelente */
-        .container {
-            width: 100%; max-width: 480px; background: var(--card-dark);
-            padding: 35px; border-radius: 40px; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        /* Dimensionamento Excelente do Board */
+        .board {
+            width: 100%; max-width: 480px; background: var(--card-surface);
+            padding: 35px 30px; border-radius: 40px; box-shadow: 0 30px 60px rgba(0,0,0,0.6);
             margin-top: 20px; box-sizing: border-box; position: relative;
         }
 
-        /* Cabeçalho: Título (E) e Contagem (D) */
+        /* Cabeçalho: Título e Contagem */
         header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
-        header h1 { font-size: 1.8rem; color: var(--pastel-brown); margin: 0; font-weight: 700; }
-        #date-box { font-size: 0.95rem; color: var(--text-dim); text-transform: capitalize; margin-top: 5px; }
-        #streak-display { font-weight: 800; color: #ff9f43; font-size: 1.3rem; }
+        .brand h1 { font-size: 1.9rem; color: var(--pastel-gold); margin: 0; font-weight: 700; }
+        #live-date { font-size: 0.95rem; color: var(--text-gray); text-transform: capitalize; margin-top: 4px; }
+        .counter { font-weight: 800; color: #ff9f43; font-size: 1.2rem; display: flex; align-items: center; gap: 5px; }
 
-        /* Barra de Progresso Tática */
-        .progress-container { background: rgba(255,255,255,0.05); height: 12px; border-radius: 10px; overflow: hidden; margin: 25px 0 8px; }
-        #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--pastel-blue), var(--pastel-pink), var(--pastel-green)); transition: 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        #stats-label { text-align: right; font-weight: 800; color: var(--pastel-green); font-size: 0.9rem; margin-bottom: 30px; }
+        /* Barra de Progresso Colorida Conforme Avança */
+        .progress-track { background: rgba(255,255,255,0.05); height: 12px; border-radius: 10px; overflow: hidden; margin: 25px 0 8px; }
+        #progress-fill { height: 100%; width: 0%; transition: 1.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        #percentage-text { text-align: right; font-weight: 800; color: var(--pastel-green); font-size: 0.85rem; margin-bottom: 30px; }
 
-        /* Entrada de Tarefas */
-        .input-group { display: flex; gap: 12px; margin-bottom: 35px; }
-        input[type="text"] { flex: 1; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 18px; color: white; outline: none; font-size: 16px; }
-        .btn-add { background: var(--pastel-pink); border: none; width: 55px; height: 55px; border-radius: 18px; color: white; font-size: 2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .btn-add:active { transform: scale(0.9); }
+        /* Input de Tarefas */
+        .input-area { display: flex; gap: 12px; margin-bottom: 35px; }
+        #task-input { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 18px; color: white; outline: none; font-size: 16px; }
+        .btn-confirm { background: var(--pastel-pink); border: none; width: 55px; height: 55px; border-radius: 18px; color: white; font-size: 2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
 
-        /* Lista de Missões (Smartphone Optimized) */
-        #todo-list { padding: 0; list-style: none; margin: 0; }
-        .todo-item { 
-            background: rgba(255,255,255,0.03); padding: 20px; border-radius: 22px; 
-            display: flex; align-items: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);
-            animation: fadeIn 0.4s ease;
+        /* Lista de Missões Ativas */
+        #mission-list { padding: 0; list-style: none; margin: 0; }
+        .mission-item { 
+            background: rgba(255,255,255,0.02); padding: 20px; border-radius: 22px; 
+            display: flex; align-items: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.04);
+            animation: slideIn 0.3s ease-out;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .todo-item input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--pastel-green); }
-        .todo-item span { margin-left: 15px; flex: 1; font-size: 1.05rem; }
-        .trash-btn { background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #f28482; opacity: 0.4; transition: 0.3s; }
-        .trash-btn:hover { opacity: 1; }
+        @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .mission-item input[type="checkbox"] { width: 24px; height: 24px; cursor: pointer; accent-color: var(--pastel-green); }
+        .mission-item span { margin-left: 15px; flex: 1; font-size: 1.1rem; }
+        .btn-delete { background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #f28482; opacity: 0.3; transition: 0.3s; }
+        .btn-delete:hover { opacity: 1; }
 
-        /* Frases (Mínimo 20) */
-        #quote-display { text-align: center; font-size: 0.95rem; font-style: italic; color: var(--text-dim); margin: 35px 0; min-height: 45px; line-height: 1.5; padding: 0 10px; }
+        /* Frase Motivacional (20+ frases) */
+        #quote-display { text-align: center; font-size: 0.95rem; font-style: italic; color: var(--text-gray); margin: 35px 0; min-height: 40px; padding: 0 10px; line-height: 1.5; }
 
-        /* Botão Gerar Relatório */
-        .btn-report { background: none; border: 2px solid var(--pastel-brown); color: var(--pastel-brown); padding: 15px 30px; border-radius: 25px; font-weight: 800; cursor: pointer; display: block; margin: 0 auto; transition: 0.3s; letter-spacing: 1px; }
-        .btn-report:active { background: var(--pastel-brown); color: white; }
+        /* Botões de Dias (Resumo embaixo do Board) */
+        .history-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 25px; max-width: 480px; }
+        .day-btn { width: 42px; height: 42px; border: 2px solid #444; border-radius: 50%; color: #666; font-size: 0.9rem; background: none; cursor: pointer; transition: 0.4s; }
+        .day-btn.completed { border-color: var(--pastel-green); color: var(--pastel-green); box-shadow: 0 0 10px rgba(185, 251, 192, 0.3); }
 
-        /* Botões Flutuantes (Fixos - No Zoom) */
-        .fab-container { position: fixed; bottom: 30px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 10000; }
-        .fab { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--card-dark); color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
+        /* Botão Gerar Relatório PDF */
+        .btn-pdf { background: none; border: 2px solid var(--pastel-gold); color: var(--pastel-gold); padding: 15px 35px; border-radius: 25px; font-weight: 800; cursor: pointer; display: block; margin: 30px auto 0; font-size: 0.85rem; letter-spacing: 1px; }
 
-        /* Tela de Autenticação */
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-deep); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .auth-card { width: 100%; max-width: 400px; text-align: center; }
-        .auth-input { width: 100%; padding: 20px; margin-bottom: 15px; border-radius: 18px; border: 1px solid #444; background: #222; color: white; font-size: 16px; box-sizing: border-box; }
-        .auth-btn { width: 100%; padding: 20px; background: var(--pastel-brown); border: none; border-radius: 18px; color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        /* Botão DarkLight Flutuante (Não some no Zoom) */
+        .fab-dock { position: fixed; bottom: 30px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 10000; pointer-events: none; }
+        .fab-dock button { pointer-events: auto; width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--card-surface); color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: pointer; font-size: 1.5rem; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Tela de Acesso (Segurança Firebase) */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 99999; display: flex; align-items: center; justify-content: center; }
+        .auth-container { width: 90%; max-width: 380px; text-align: center; }
+        .auth-input { width: 100%; padding: 20px; margin-bottom: 15px; border-radius: 18px; border: 1px solid #444; background: #222; color: white; box-sizing: border-box; font-size: 16px; }
+        .auth-main-btn { width: 100%; padding: 20px; background: var(--pastel-gold); border: none; border-radius: 18px; color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
         .hidden { display: none !important; }
     </style>
 </head>
-<body ondblclick="toggleFullScreen()"> <div id="auth-overlay">
-    <div class="container auth-card">
-        <h1 id="auth-header">Portaria Alvorada</h1>
+<body ondblclick="toggleFullScreen()"> <div id="auth-screen">
+    <div class="board auth-container">
+        <h1 id="auth-title">Recrutamento Alvorada</h1>
         <div style="margin-top: 35px;">
-            <input type="text" id="login-user" class="auth-input" placeholder="Agente (Nome)">
-            <input type="password" id="login-pass" class="auth-input" placeholder="Senha Secreta">
-            <button onclick="executeAuth()" id="auth-action-btn" class="auth-btn">AUTENTICAR</button>
-            <p onclick="switchAuth()" style="font-size: 0.85rem; margin-top: 25px; cursor: pointer; color: var(--text-dim); text-decoration: underline;">Novo na corporação? Criar Conta</p>
+            <input type="text" id="user-field" class="auth-input" placeholder="Seu Nome de Agente"> <input type="password" id="pass-field" class="auth-input" placeholder="Sua Senha">
+            <button onclick="handleAuthAction()" id="action-btn" class="auth-main-btn">CRIAR MINHA CONTA</button>
+            <p onclick="toggleAuthMode()" style="font-size: 0.85rem; margin-top: 20px; cursor: pointer; color: var(--text-gray); text-decoration: underline;">Já é um Agente? Faça Login</p>
         </div>
     </div>
 </div>
 
-<div class="container" id="app-main">
+<div class="board" id="main-board">
     <header>
-        <div>
-            <h1>Alvorada</h1> <div id="date-box"></div> </div>
-        <div id="streak-display">🔥 0</div> </header>
+        <div class="brand">
+            <h1>Alvorada</h1> <div id="live-date"></div> </div>
+        <div class="counter">🔥 <span id="streak-num">0</span> dias</div> </header>
 
-    <div class="progress-container"><div id="progress-bar"></div></div>
-    <div id="stats-label">0%</div>
+    <div class="progress-track"><div id="progress-fill"></div></div>
+    <div id="percentage-text">TOTAL: 0%</div> <div class="input-area">
+        <input type="text" id="task-input" placeholder="O que vamos conquistar hoje?">
+        <button class="btn-confirm" onclick="addTask()">+</button> </div>
 
-    <div class="input-group">
-        <input type="text" id="task-input" placeholder="Nova missão de hoje...">
-        <button class="btn-add" onclick="addNewTask()">+</button> </div>
+    <ul id="mission-list"></ul> <div id="quote-display">"Iniciando Protocolo..."</div> <div class="history-grid" id="history-dots"></div>
 
-    <ul id="todo-list"></ul> <div id="quote-display"></div> <button class="btn-report" onclick="generateMarketTicket()">📄 GERAR RELATÓRIO (TICKET)</button>
+    <button class="btn-pdf" onclick="generateTicket()">📄 SALVAR EM PDF</button>
 </div>
 
-<div class="fab-container">
-    <button class="fab" onclick="toggleDarkLight()" title="Visão Noturna">🌙</button> <button class="fab" onclick="firebase.auth().signOut()" title="Sair do Posto">🚪</button>
+<div class="fab-dock">
+    <button onclick="toggleTheme()" title="Modo Noturno">🌙</button> <button onclick="firebase.auth().signOut()" title="Encerrar Sessão">🚪</button>
 </div>
 
 <script>
-    /* --- LÓGICA TÁTICA --- */
+    /* --- LÓGICA DE OPERAÇÕES --- */
+    
+    // Configurações do seu Firebase Studio (Corrigido)
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -125,8 +129,8 @@
     const db = firebase.firestore();
 
     // PACTO: Mínimo 20 frases motivacionais
-    const tacticalQuotes = [
-        "A constância é a mãe da aprovação.", "1% melhor a cada novo dia.", "Não pare até se orgulhar de quem se tornou.",
+    const missionQuotes = [
+        "A constância é a mãe da aprovação.", "1% melhor a cada novo dia.", "Não pare até se orgulhar de quem você se tornou.",
         "A disciplina é a ponte entre metas e realizações.", "Vencer a si mesmo é a maior das vitórias.",
         "Mantenha o foco na missão, o cargo virá.", "Seu esforço de hoje é o seu distintivo de amanhã.",
         "Estude enquanto eles dormem.", "A vaga é sua por mérito e suor.", "Fé na missão, Agente!",
@@ -137,147 +141,179 @@
         "O sucesso é o acúmulo de pequenos acertos diários.", "Agente: sua rotina é seu maior treinamento."
     ];
 
-    let isLoginMode = true;
-    let currentData = { tasks: [], percent: 0 };
-    const today = new Date();
-    // PACTO: Formatação Dia da semana, dia do mês e mês
-    const dateFormatted = today.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-    const dbID = today.toLocaleDateString('pt-BR'); // Chave de data DD/MM/AAAA
+    let isLogin = false;
+    let agentData = { tasks: [], percent: 0 };
+    const now = new Date();
+    // PACTO: Quinta-Feira, 29 De Janeiro
+    const dateStr = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const cloudKey = now.toLocaleDateString('pt-BR'); // Chave DD/MM/AAAA para o Firebase
 
-    // Autenticação
-    function switchAuth() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-header').innerText = isLoginMode ? "Portaria Alvorada" : "Recrutamento";
-        document.getElementById('auth-action-btn').innerText = isLoginMode ? "AUTENTICAR" : "CADASTRAR";
+    // Segurança e Autenticação (Resolvendo "Badly Formatted Email")
+    function toggleAuthMode() {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Acesso Alvorada" : "Recrutamento Alvorada";
+        document.getElementById('action-btn').innerText = isLogin ? "ENTRAR NO SISTEMA" : "CRIAR MINHA CONTA";
     }
 
-    function executeAuth() {
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value;
-        if(!user || !pass) return;
-        const email = `${user.toLowerCase().replace(/\s/g, '')}@alvorada.com`;
-        const action = isLoginMode ? firebase.auth().signInWithEmailAndPassword(email, pass) : firebase.auth().createUserWithEmailAndPassword(email, pass);
-        action.catch(e => alert("Erro na Base: " + e.message));
+    function handleAuthAction() {
+        const rawName = document.getElementById('user-field').value.trim();
+        const pass = document.getElementById('pass-field').value;
+        if(!rawName || pass.length < 6) { alert("Nome obrigatório e senha mín. 6 caracteres."); return; }
+        
+        // Transformação Interna: "carina" vira "carina@alvorada.com" para satisfazer o Firebase
+        const agentEmail = `${rawName.toLowerCase().replace(/\s/g, '')}@alvorada.com`;
+        
+        const action = isLogin 
+            ? firebase.auth().signInWithEmailAndPassword(agentEmail, pass)
+            : firebase.auth().createUserWithEmailAndPassword(agentEmail, pass);
+
+        action.catch(err => alert("Erro Operacional: " + err.message));
     }
 
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
-            document.getElementById('auth-overlay').classList.add('hidden');
-            syncCloud();
-            document.getElementById('quote-display').innerText = `"${tacticalQuotes[Math.floor(Math.random()*tacticalQuotes.length)]}"`;
+            document.getElementById('auth-screen').classList.add('hidden');
+            syncBase();
+            document.getElementById('quote-display').innerText = `"${missionQuotes[Math.floor(Math.random()*missionQuotes.length)]}"`;
         } else {
-            document.getElementById('auth-overlay').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
         }
     });
 
-    // Operações de Dados
-    async function syncCloud() {
-        const user = firebase.auth().currentUser;
-        const doc = await db.collection("usuarios").doc(user.uid).collection("dias").doc(dbID).get();
+    // Sincronização e Persistência (PACTO: Manter tarefas de X para Y)
+    async function syncBase() {
+        const uid = firebase.auth().currentUser.uid;
+        const doc = await db.collection("usuarios").doc(uid).collection("dias").doc(cloudKey).get();
+        
         if(doc.exists) {
-            currentData = doc.data();
+            agentData = doc.data();
         } else {
-            // Herança de ontem
-            const last = await db.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
-            if(!last.empty) currentData.tasks = last.docs[0].data().tasks.map(t => ({...t, done: false, id: Date.now()+Math.random()}));
+            // Se for um novo dia, busca as tarefas do dia anterior mas com status "pendente"
+            const lastLog = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
+            if(!lastLog.empty) {
+                agentData.tasks = lastLog.docs[0].data().tasks.map(t => ({...t, done: false, id: Date.now()+Math.random()}));
+            }
         }
-        refreshUI();
-        updateStreak(user.uid);
+        renderMissions();
+        updateStreak(uid);
     }
 
-    function refreshUI() {
-        const list = document.getElementById('todo-list');
+    function renderMissions() {
+        const list = document.getElementById('mission-list');
         list.innerHTML = '';
-        let completedCount = 0;
+        let done = 0;
 
-        currentData.tasks.forEach(t => {
+        agentData.tasks.forEach(t => {
             const li = document.createElement('li');
-            li.className = 'todo-item';
+            li.className = 'mission-item';
             li.innerHTML = `
                 <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')">
                 <span style="${t.done ? 'text-decoration:line-through; opacity:0.3' : ''}">${t.text}</span>
-                <button class="trash-btn" onclick="deleteTask('${t.id}')">🗑️</button>
+                <button class="btn-delete" onclick="removeTask('${t.id}')">🗑️</button>
             `;
             list.appendChild(li);
-            if(t.done) completedCount++;
+            if(t.done) done++;
         });
 
-        const perc = currentData.tasks.length > 0 ? Math.round((completedCount/currentData.tasks.length)*100) : 0;
-        if(perc === 100 && currentData.percent < 100) confetti({ particleCount: 150, spread: 70 });
-        currentData.percent = perc;
-        document.getElementById('progress-bar').style.width = perc + '%';
-        document.getElementById('stats-label').innerText = perc + '%';
-        saveCloud();
+        const perc = agentData.tasks.length > 0 ? Math.round((done / agentData.tasks.length) * 100) : 0;
+        
+        // Cor da barra pastel dinâmica
+        const bar = document.getElementById('progress-fill');
+        if(perc <= 30) bar.style.background = 'var(--pastel-blue)';
+        else if(perc <= 70) bar.style.background = 'var(--pastel-pink)';
+        else bar.style.background = 'var(--pastel-green)';
+        
+        bar.style.width = perc + '%';
+        document.getElementById('percentage-text').innerText = `TOTAL: ${perc}%`;
+        
+        if(perc === 100 && agentData.percent < 100) confetti({ particleCount: 150, spread: 70, origin: { y: 0.8 } });
+        
+        agentData.percent = perc;
+        saveToCloud();
     }
 
-    function saveCloud() {
-        const user = firebase.auth().currentUser;
-        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(dbID).set(currentData);
-    }
-
-    // PACTO: ID Definido no Firebase/Local
-    function addNewTask() {
+    function addTask() {
         const input = document.getElementById('task-input');
         if(!input.value) return;
-        currentData.tasks.push({ id: Date.now().toString() + Math.random(), text: input.value, done: false });
+        // PACTO: Definindo ID Único por Timestamp
+        agentData.tasks.push({ id: Date.now().toString() + Math.random(), text: input.value, done: false });
         input.value = '';
-        refreshUI();
+        renderMissions();
     }
 
     function toggleTask(id) {
-        const task = currentData.tasks.find(x => x.id === id);
+        const task = agentData.tasks.find(x => x.id === id);
         if(task) task.done = !task.done;
-        refreshUI();
+        renderMissions();
     }
 
-    function deleteTask(id) {
-        currentData.tasks = currentData.tasks.filter(x => x.id !== id);
-        refreshUI();
+    function removeTask(id) {
+        agentData.tasks = agentData.tasks.filter(x => x.id !== id);
+        renderMissions();
     }
 
-    // PACTO: PDF Formato Ticket de Mercado
-    function generateMarketTicket() {
-        const doc = document.createElement('div');
-        doc.style.cssText = "width: 80mm; padding: 25px; font-family: 'Courier New', monospace; color: black; background: white;";
+    function saveToCloud() {
+        const user = firebase.auth().currentUser;
+        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(cloudKey).set(agentData);
+    }
+
+    // PACTO: Gerar Ticket de Mercado PDF
+    function generateTicket() {
+        const ticket = document.createElement('div');
+        ticket.style.cssText = "width: 80mm; padding: 20px; font-family: 'Courier New', monospace; color: black; background: white;";
         
-        let missionRows = currentData.tasks.map(t => `
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 6px 0; font-size: 13px;">
+        let rows = agentData.tasks.map(t => `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 5px 0; font-size: 12px;">
                 <span style="max-width: 170px;">${t.text.toUpperCase()}</span>
                 <span style="font-weight: bold;">${t.done ? 'OK' : '--'}</span>
             </div>
         `).join('');
 
-        doc.innerHTML = `
-            <div style="text-align:center; border-bottom: 2.5px solid #000; padding-bottom: 12px; margin-bottom: 15px;">
+        ticket.innerHTML = `
+            <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
                 <h2 style="margin:0;">RELATÓRIO</h2>
                 <small>ALVORADA TÁTICO</small><br>
-                <small>${dateFormatted.toUpperCase()}</small>
+                <small>${dateStr.toUpperCase()}</small>
             </div>
-            <div style="margin-bottom: 15px;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1.5px solid #000; margin-bottom:5px;">
+            <div style="margin-bottom: 10px;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid #000; margin-bottom:5px;">
                     <span>TAREFA</span>
                     <span>STATUS</span>
                 </div>
-                ${missionRows}
+                ${rows}
             </div>
-            <div style="text-align:right; font-weight:bold; border-top: 2.5px solid #000; padding-top:12px; font-size: 1.2rem;">
-                TOTAL: ${currentData.percent}%
+            <div style="text-align:right; font-weight:bold; border-top: 2px solid #000; padding-top:10px; font-size: 1.1rem;">
+                APROVEITAMENTO: ${agentData.percent}%
             </div>
-            <div style="text-align:center; margin-top:30px; font-size:10px; border-top: 1px dashed #000; padding-top: 10px;">
+            <div style="text-align:center; margin-top:25px; font-size:10px; border-top: 1px dashed #000; padding-top: 10px;">
                 *** COMPROVANTE DE MISSÃO ***
             </div>
         `;
 
-        const opt = { margin: 8, filename: `Ticket_Alvorada.pdf`, jsPDF: { unit: 'mm', format: [80, 150] } };
-        html2pdf().set(opt).from(doc).save();
+        const opt = { margin: 10, filename: `Relatorio_Agente_${cloudKey}.pdf`, jsPDF: { unit: 'mm', format: [80, 150] } };
+        html2pdf().set(opt).from(ticket).save();
     }
 
+    // Histórico de Círculos (1 a 8)
     async function updateStreak(uid) {
-        const snap = await db.collection("usuarios").doc(uid).collection("dias").where("percent", "==", 100).get();
-        document.getElementById('streak-display').innerText = `🔥 ${snap.size}`;
+        const snap = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(8).get();
+        const grid = document.getElementById('history-dots');
+        grid.innerHTML = '';
+        
+        document.getElementById('streak-num').innerText = snap.size;
+
+        for(let i=1; i<=8; i++) {
+            const dot = document.createElement('button');
+            dot.className = 'day-btn';
+            dot.innerText = i;
+            // Se o dia existir e estiver 100%, pinta de verde
+            const dayData = snap.docs[snap.size - i];
+            if(dayData && dayData.data().percent === 100) dot.classList.add('completed');
+            grid.appendChild(dot);
+        }
     }
 
-    function toggleDarkLight() {
+    function toggleTheme() {
         const isDark = document.body.style.filter === 'invert(1)';
         document.body.style.filter = isDark ? 'invert(0)' : 'invert(1)';
         document.body.style.backgroundColor = isDark ? '#1a1c24' : '#eee';
@@ -288,7 +324,7 @@
         else document.exitFullscreen();
     }
 
-    document.getElementById('date-box').innerText = dateFormatted;
+    document.getElementById('live-date').innerText = dateStr;
 </script>
 </body>
 </html>
