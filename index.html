@@ -42,7 +42,6 @@
             transition: all 0.4s ease; min-height: 100vh;
         }
 
-        /* Transição Suave de Login */
         #auth-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 9999;
@@ -88,6 +87,9 @@
             border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); z-index: 2000;
             width: 280px; text-align: center;
         }
+
+        /* Lixeira do lado direito conforme solicitado */
+        .delete-btn { background: none; border: none; cursor: pointer; opacity: 0.5; margin-left: auto; }
 
         .theme-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--title-brown); border: none; cursor: pointer; color: white; z-index: 999; }
     </style>
@@ -142,14 +144,14 @@
 <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 
 <script>
-    // CONFIGURAÇÃO FIREBASE
+    // CONFIGURAÇÃO FIREBASE INTEGRADA
     const firebaseConfig = {
-        apiKey: "SUA_API_KEY",
-        authDomain: "SEU_PROJETO.firebaseapp.com",
-        projectId: "SEU_PROJETO",
-        storageBucket: "SEU_PROJETO.appspot.com",
-        messagingSenderId: "SEU_ID",
-        appId: "SUA_APP_ID"
+      apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
+      authDomain: "alvorada-23e01.firebaseapp.com",
+      projectId: "alvorada-23e01",
+      storageBucket: "alvorada-23e01.firebasestorage.app",
+      messagingSenderId: "173441904175",
+      appId: "1:173441904175:web:7d3a7aba8b90afa05ea0da"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -184,9 +186,9 @@
             btn.innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
             switch (err.code) {
                 case 'auth/wrong-password': errorMsg.innerText = "❌ Senha incorreta."; break;
-                case 'auth/user-not-found': errorMsg.innerText = "❌ Agente não localizado."; break;
+                case 'auth/user-not-found': errorMsg.innerText = "❌ Usuário não encontrado."; break;
                 case 'auth/weak-password': errorMsg.innerText = "❌ Senha fraca (mín. 6 caracteres)."; break;
-                case 'auth/email-already-in-use': errorMsg.innerText = "❌ E-mail já cadastrado."; break;
+                case 'auth/email-already-in-use': errorMsg.innerText = "❌ Este e-mail já está em uso."; break;
                 default: errorMsg.innerText = "❌ Erro: " + err.message;
             }
         });
@@ -232,7 +234,7 @@
             li.innerHTML = `
                 <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${index})" style="margin-right:12px; width:20px; height:20px;">
                 <span style="flex:1; font-size:0.95rem; ${todo.completed ? 'text-decoration:line-through; opacity:0.6' : ''}">${todo.text}</span>
-                <button onclick="deleteTodo(${index})" style="background:none; border:none; cursor:pointer; opacity:0.5;">🗑️</button>
+                <button onclick="deleteTodo(${index})" class="delete-btn">🗑️</button>
             `;
             list.appendChild(li);
             if (todo.completed) completed++;
@@ -249,6 +251,7 @@
 
     async function updateTotalStreak() {
         const user = firebase.auth().currentUser;
+        if(!user) return;
         const days = await dbFirestore.collection("usuarios").doc(user.uid).collection("dias").where("percent", "==", 100).get();
         document.getElementById('streak-display').innerText = `🔥 ${days.size} dias`;
     }
@@ -293,13 +296,6 @@
         localStorage.setItem('theme', theme);
         document.getElementById('theme-btn').innerText = theme === 'light' ? '🌙' : '☀️';
     }
-
-    setInterval(() => {
-        const pendentes = dbLocal.todos.filter(t => !t.completed).length;
-        if (pendentes > 0 && Notification.permission === "granted") {
-            new Notification("Alvorada", { body: `Agente, você tem ${pendentes} missões pendentes.` });
-        }
-    }, 3600000);
 
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
 </script>
