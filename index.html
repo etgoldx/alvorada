@@ -3,15 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#fdfaf6">
-
     <title>Alvorada - 1% Todo Dia</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -38,20 +30,51 @@
         body {
             font-family: 'Quicksand', sans-serif;
             background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+            margin: 0; padding: env(safe-area-inset-top) 20px 100px 20px;
             display: flex; flex-direction: column; align-items: center;
-            transition: all 0.4s ease; min-height: 100vh; overflow-x: hidden;
+            transition: all 0.4s ease; min-height: 100vh;
         }
 
-        /* Container Principal com dimensionamento recuperado */
+        /* Container Principal re-dimensionado */
         .container {
-            width: 100%; max-width: 480px;
-            background: var(--card-bg); padding: 30px; border-radius: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-top: 20px; position: relative; box-sizing: border-box;
+            width: 100%; max-width: 480px; background: var(--card-bg); 
+            padding: 35px; border-radius: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            margin-top: 25px; box-sizing: border-box;
         }
 
-        /* Estilo do Login */
+        /* Títulos e Data conforme versões anteriores */
+        h1 { font-family: 'Comfortaa', cursive; font-size: 1.8rem; color: var(--title-brown); margin: 0; }
+        #date-box { font-size: 1.1rem; color: var(--title-brown); font-weight: 600; text-transform: capitalize; margin: 5px 0 25px 0; }
+
+        /* Estilo das Missões */
+        .todo-item { 
+            background: var(--card-bg); border: 1px solid var(--input-border); 
+            padding: 16px; border-radius: 18px; display: flex; align-items: center; margin-bottom: 12px; 
+        }
+        .delete-btn { background: none; border: none; cursor: pointer; opacity: 0.3; margin-left: auto; font-size: 1.2rem; }
+
+        /* Frases Motivacionais Centralizadas */
+        #quote-display { 
+            text-align: center; font-size: 0.9rem; font-style: italic; 
+            color: var(--date-color); margin: 30px 0; line-height: 1.5; padding: 0 10px;
+        }
+
+        /* Botão Gerar Relatório Solto */
+        #btn-pdf {
+            background: none; border: none; color: var(--date-color); 
+            font-size: 0.8rem; font-weight: bold; cursor: pointer; 
+            text-decoration: underline; margin-top: 10px; transition: 0.3s;
+        }
+
+        /* Botões Flutuantes Lado a Lado */
+        .fab-container { position: fixed; bottom: 30px; right: 25px; display: flex; gap: 10px; z-index: 1000; }
+        .fab { 
+            width: 50px; height: 50px; border-radius: 50%; border: none; 
+            background: var(--title-brown); color: white; cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 1.2rem;
+        }
+
+        /* Tela de Login */
         #auth-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 9999;
@@ -59,75 +82,54 @@
         }
         .auth-hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: 0.8s; }
 
-        /* Cabeçalho e Frases */
-        header { margin-bottom: 30px; }
-        h1 { font-family: 'Comfortaa', cursive; font-size: 1.6rem; color: var(--title-brown); margin: 0; }
-        #quote-display { font-size: 0.85rem; font-style: italic; color: var(--date-color); margin-top: 10px; line-height: 1.4; min-height: 3em; }
-
-        /* Lista de Metas */
-        .todo-item { 
-            background: var(--card-bg); border: 1px solid var(--input-border); 
-            padding: 15px; border-radius: 15px; display: flex; 
-            align-items: center; margin-bottom: 12px; transition: 0.3s;
-        }
-        .delete-btn { background: none; border: none; cursor: pointer; opacity: 0.3; margin-left: auto; font-size: 1.2rem; }
-        .delete-btn:hover { opacity: 1; color: var(--delete-red); }
-
-        /* Botão Flutuante de Tema */
-        .theme-toggle { position: fixed; bottom: 25px; right: 25px; width: 50px; height: 50px; border-radius: 50%; background: var(--title-brown); border: none; color: white; cursor: pointer; z-index: 900; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-
-        /* Estilo do PDF (Ticket de Compra) */
-        .pdf-export-only { display: none; }
-        @media print {
-            .ticket { width: 80mm; font-family: 'Courier New', Courier, monospace; padding: 10px; color: black !important; }
-            .ticket-header { border-bottom: 1px dashed #000; text-align: center; padding-bottom: 10px; }
-            .ticket-item { border-bottom: 1px dashed #eee; padding: 5px 0; font-size: 12px; }
-        }
+        /* Estilo Ticket para Impressão */
+        .ticket-hidden { display: none; }
     </style>
 </head>
 <body ondblclick="toggleFullScreen()"> <div id="auth-container">
     <div class="container" style="text-align: center;">
         <h1 id="auth-title">Portaria Alvorada</h1>
-        <input type="text" id="auth-login" placeholder="Seu Agente (Login)" style="width: 100%; margin: 15px 0 10px; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); font-size: 16px;">
+        <input type="text" id="auth-login" placeholder="Nome de Usuário" style="width: 100%; margin: 20px 0 10px; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); font-size: 16px;">
         <input type="password" id="auth-password" placeholder="Senha" style="width: 100%; margin-bottom: 20px; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); font-size: 16px;">
         <button onclick="handleAuth()" id="auth-btn" style="width:100%; padding:18px; background:var(--title-brown); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">ACESSAR SISTEMA</button>
-        <p id="auth-toggle-text" style="cursor:pointer; margin-top:20px; font-size:0.85rem; text-decoration: underline;" onclick="toggleAuthMode()">Não tem conta? Cadastre-se</p>
+        <p id="auth-toggle-text" style="cursor:pointer; margin-top:20px; font-size:0.85rem;" onclick="toggleAuthMode()">Novo aqui? Registre seu Agente</p>
         <p id="auth-error" style="color:var(--delete-red); font-size:0.8rem; margin-top:15px;"></p>
     </div>
 </div>
 
 <div class="container" id="main-app">
-    <header>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
             <h1>Alvorada</h1>
-            <div id="streak-display" style="font-weight: bold; color: #ff9f43;">🔥 0 dias</div>
-        </div>
-        <div id="current-date" style="text-transform: capitalize; color: var(--title-brown); font-weight: 600; margin-top: 5px;"></div>
-        <div id="quote-display">"Carregando motivação..."</div>
+            <div id="date-box"></div> </div>
+        <div id="streak-display" style="font-weight: 800; color: #ff9f43; font-size: 1.1rem;">🔥 0</div>
     </header>
 
     <div style="background: var(--bar-bg); height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
-        <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 0.6s ease;"></div>
+        <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
     </div>
-    <div id="stats" style="text-align: right; font-weight: 800; color: var(--stats-green); font-size: 0.9rem; margin-bottom: 25px;">Total: 0%</div>
+    <div id="stats" style="text-align: right; font-weight: 800; color: var(--stats-green); font-size: 0.9rem; margin-bottom: 30px;">Total: 0%</div>
 
-    <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-        <input type="text" id="todo-input" placeholder="Nova missão de hoje..." style="flex:1; padding:15px; border-radius:12px; border:1px solid var(--input-border); outline:none; font-size:16px;">
-        <button onclick="addTodo()" style="background:var(--add-red); color:white; border:none; padding:0 20px; border-radius:12px; font-size:1.5rem; cursor:pointer;">+</button>
+    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <input type="text" id="todo-input" placeholder="Nova missão..." style="flex:1; padding:15px; border-radius:15px; border:1px solid var(--input-border); outline:none; font-size:16px;">
+        <button onclick="addTodo()" style="background:var(--add-red); color:white; border:none; padding:0 22px; border-radius:15px; font-size:1.6rem; cursor:pointer;">+</button>
     </div>
 
-    <ul id="todo-list" style="padding:0; list-style:none; margin-bottom: 30px;"></ul>
+    <ul id="todo-list" style="padding:0; list-style:none;"></ul>
 
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <button onclick="exportToPDF()" style="background: none; border: 1px solid var(--title-brown); color: var(--title-brown); padding: 8px 15px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; cursor: pointer;">📄 Salvar em PDF (Ticket)</button>
-        <button onclick="firebase.auth().signOut()" style="background:none; border:none; color:var(--date-color); font-size:0.75rem; text-decoration:underline; cursor:pointer;">Sair do Sistema</button>
+    <div id="quote-display"></div>
+    <div style="text-align: center;">
+        <button id="btn-pdf" onclick="exportToPDF()">📄 Gerar Relatório (Ticket)</button>
     </div>
 </div>
 
-<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+<div class="fab-container">
+    <button class="fab" onclick="toggleTheme()" title="Alterar Tema">🌙</button>
+    <button class="fab" onclick="firebase.auth().signOut()" title="Sair do Sistema">🚪</button>
+</div>
 
 <script>
-    // 1. Configuração do Firebase
+    // Configurações Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -139,61 +141,36 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 2. Banco de Frases (As 20 frases motivacionais recuperadas)
+    // 20 Frases de Motivação Recuperadas
     const quotes = [
-        "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
-        "Não pare até se orgulhar.",
-        "A constância é a amiga da perfeição.",
-        "1% melhor a cada dia.",
-        "Vencer a si mesmo é a maior das vitórias.",
-        "Grandes batalhas só são dadas a grandes guerreiros.",
-        "A disciplina é a ponte entre metas e realizações.",
-        "O que você faz hoje determina o seu amanhã.",
-        "Não espere motivação, cultive disciplina.",
-        "Foque no processo, o resultado é consequência.",
-        "Sua única competição é quem você era ontem.",
-        "Cada passo, por menor que seja, te aproxima do objetivo.",
-        "A dor é temporária, o cargo é para sempre.",
-        "Mantenha o foco nos estudos e a fé na missão.",
-        "Agente: sua rotina é seu treinamento.",
-        "Transforme o 'eu não consigo' em 'eu ainda estou aprendendo'.",
-        "Estude enquanto eles dormem, viva o que eles sonham.",
-        "A aprovação é o destino, a constância é o caminho.",
-        "Seja mais forte que sua melhor desculpa.",
-        "Missão dada é missão cumprida."
+        "O sucesso é a soma de pequenos esforços repetidos dia após dia.", "Não pare até se orgulhar.", "A constância é a amiga da perfeição.", "1% melhor a cada dia.", "Vencer a si mesmo é a maior das vitórias.", "Grandes batalhas só são dadas a grandes guerreiros.", "A disciplina é a ponte entre metas e realizações.", "O que você faz hoje determina o seu amanhã.", "Não espere motivação, cultive disciplina.", "Foque no processo, o resultado é consequência.", "Sua única competição é quem você era ontem.", "Cada passo te aproxima do objetivo.", "A dor é temporária, o cargo é para sempre.", "Mantenha o foco nos estudos e a fé na missão.", "Agente: sua rotina é seu treinamento.", "Transforme o 'não consigo' em 'estou aprendendo'.", "Estude enquanto eles dormem, viva o que eles sonham.", "A aprovação é o destino, a constância é o caminho.", "Seja mais forte que sua melhor desculpa.", "Missão dada é missão cumprida."
     ];
 
-    // 3. Variáveis de Estado
     let isLoginMode = true;
     let dbLocal = { todos: [], percent: 0 };
     const dateObj = new Date();
-    // Formato solicitado: Dia da semana, Dia de Mês (Sem o ano)
+    // Formatação da Data: Quinta-feira, 29 de Janeiro (sem ano)
     const options = { weekday: 'long', day: 'numeric', month: 'long' };
     const todayStr = dateObj.toLocaleDateString('pt-BR', options);
-    const dbKey = dateObj.toLocaleDateString('pt-BR'); // Chave para o Firebase (DD/MM/AAAA)
+    const dbKey = dateObj.toLocaleDateString('pt-BR'); // Chave de busca (DD/MM/AAAA)
 
-    // 4. Funções de Autenticação (Com sanitização para Nome de Usuário)
+    // Lógica de Autenticação (Login por Nome)
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
         document.getElementById('auth-title').innerText = isLoginMode ? "Portaria Alvorada" : "Recrutamento Alvorada";
         document.getElementById('auth-btn').innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
-        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Não tem conta? Cadastre-se" : "Já é um Agente? Faça Login";
+        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Novo aqui? Registre seu Agente" : "Já é um Agente? Faça Login";
     }
 
     function handleAuth() {
-        const loginRaw = document.getElementById('auth-login').value.trim();
+        const login = document.getElementById('auth-login').value.trim();
         const password = document.getElementById('auth-password').value;
-        if(!loginRaw || !password) return;
-
-        // Converte o nome de usuário em e-mail fictício (acordo tático)
-        const safeLogin = loginRaw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const email = `${safeLogin}@alvorada.com`;
-        
-        const action = isLoginMode 
-            ? firebase.auth().signInWithEmailAndPassword(email, password)
-            : firebase.auth().createUserWithEmailAndPassword(email, password);
-
-        action.catch(err => { document.getElementById('auth-error').innerText = "Erro: " + err.message; });
+        if(!login || !password) return;
+        const email = `${login.toLowerCase().replace(/\s/g, '')}@alvorada.com`; // Sanitização tática
+        const btn = document.getElementById('auth-btn');
+        btn.innerText = "PROCESSANDO...";
+        const action = isLoginMode ? firebase.auth().signInWithEmailAndPassword(email, password) : firebase.auth().createUserWithEmailAndPassword(email, password);
+        action.catch(err => { btn.innerText = "TENTAR NOVAMENTE"; document.getElementById('auth-error').innerText = "Erro: " + err.message; });
     }
 
     firebase.auth().onAuthStateChanged(user => {
@@ -206,7 +183,7 @@
         }
     });
 
-    // 5. Gerenciamento de Dados (Firebase + UI)
+    // Banco de Dados e UI
     async function loadData() {
         const user = firebase.auth().currentUser;
         if(!user) return;
@@ -214,12 +191,9 @@
         if(doc.exists) {
             dbLocal = doc.data();
         } else {
-            // Se for um novo dia, tenta trazer as tarefas do dia anterior (sem estarem marcadas)
-            const lastDoc = await db.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
-            if(!lastDoc.empty) {
-                const data = lastDoc.docs[0].data();
-                dbLocal.todos = data.todos.map(t => ({...t, completed: false}));
-            }
+            // Tenta herdar missões do último registro para constância
+            const last = await db.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
+            if(!last.empty) dbLocal.todos = last.docs[0].data().todos.map(t => ({...t, completed: false}));
         }
         updateUI();
         updateStreak(user.uid);
@@ -229,22 +203,19 @@
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
         let done = 0;
-
         dbLocal.todos.forEach(t => {
             const li = document.createElement('li');
             li.className = 'todo-item';
             li.innerHTML = `
-                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo('${t.id}')" style="transform: scale(1.3); cursor: pointer;">
-                <span style="margin-left:15px; flex:1; font-weight:500; ${t.completed ? 'text-decoration:line-through; opacity:0.4' : ''}">${t.text}</span>
+                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo('${t.id}')" style="width:22px; height:22px; cursor:pointer;">
+                <span style="margin-left:15px; flex:1; font-weight:600; ${t.completed ? 'text-decoration:line-through; opacity:0.4' : ''}">${t.text}</span>
                 <button class="delete-btn" onclick="deleteTodo('${t.id}')">🗑️</button>
             `;
             list.appendChild(li);
             if(t.completed) done++;
         });
-
-        const p = dbLocal.todos.length > 0 ? Math.round((done / dbLocal.todos.length) * 100) : 0;
+        const p = dbLocal.todos.length > 0 ? Math.round((done/dbLocal.todos.length)*100) : 0;
         if(p === 100 && dbLocal.percent < 100) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        
         dbLocal.percent = p;
         document.getElementById('progress-bar').style.width = p + '%';
         document.getElementById('stats').innerText = `Total: ${p}%`;
@@ -257,11 +228,11 @@
     }
 
     function addTodo() {
-        const input = document.getElementById('todo-input');
-        if(!input.value) return;
-        // PACTO: DEFININDO ID ÚNICO VIA TIMESTAMP
-        dbLocal.todos.push({ id: Date.now().toString(), text: input.value, completed: false });
-        input.value = '';
+        const inp = document.getElementById('todo-input');
+        if(!inp.value) return;
+        // ID ÚNICO via timestamp conforme pacto
+        dbLocal.todos.push({ id: Date.now().toString(), text: inp.value, completed: false });
+        inp.value = '';
         updateUI();
     }
 
@@ -276,61 +247,69 @@
         updateUI();
     }
 
-    // 6. Funcionalidades Extras (Frases, Streak, Tema, FullScreen)
+    // Funções de Interface
     function showRandomQuote() {
-        const index = Math.floor(Math.random() * quotes.length);
-        document.getElementById('quote-display').innerText = `"${quotes[index]}"`;
+        document.getElementById('quote-display').innerText = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
     }
 
     async function updateStreak(uid) {
-        const snapshot = await db.collection("usuarios").doc(uid).collection("dias").where("percent", "==", 100).get();
-        document.getElementById('streak-display').innerText = `🔥 ${snapshot.size} dias`;
+        const snap = await db.collection("usuarios").doc(uid).collection("dias").where("percent", "==", 100).get();
+        document.getElementById('streak-display').innerText = `🔥 ${snap.size}`;
     }
 
     function toggleTheme() {
-        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-        document.getElementById('theme-btn').innerText = theme === 'dark' ? '☀️' : '🌙';
+        const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
     }
 
     function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => console.log(err));
-        } else {
-            document.exitFullscreen();
-        }
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
     }
 
-    // 7. Exportação para PDF Estilo Ticket de Compra (Acordo Recuperado)
+    // EXPORTAR PDF - Estilo Ticket de Compra (Recuperado)
     function exportToPDF() {
-        const element = document.createElement('div');
-        element.className = 'ticket';
-        element.innerHTML = `
-            <div style="text-align:center; font-family:monospace;">
-                <h3>ALVORADA PROTOCOLO</h3>
-                <p>RELATÓRIO DE MISSÕES</p>
-                <p>${todayStr}</p>
-                <hr style="border:none; border-top:1px dashed #000;">
-                <div style="text-align:left;">
-                    ${dbLocal.todos.map(t => `<p>[${t.completed ? 'X' : ' '}] ${t.text}</p>`).join('')}
+        const ticket = document.createElement('div');
+        ticket.style.cssText = "width: 80mm; padding: 20px; font-family: 'Courier New', monospace; color: black; background: white;";
+        
+        let itemsHtml = dbLocal.todos.map(t => `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 5px 0;">
+                <span>${t.text.substring(0, 20)}</span>
+                <span>${t.completed ? 'OK' : '--'}</span>
+            </div>
+        `).join('');
+
+        ticket.innerHTML = `
+            <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="margin:0;">ALVORADA</h2>
+                <small>PROTOCOLO DE MISSÕES</small><br>
+                <small>${todayStr.toUpperCase()}</small>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid #000;">
+                    <span>MISSÃO</span>
+                    <span>STATUS</span>
                 </div>
-                <hr style="border:none; border-top:1px dashed #000;">
-                <p>APROVEITAMENTO: ${dbLocal.percent}%</p>
-                <p>FOCO NA MISSÃO - PC</p>
+                ${itemsHtml}
+            </div>
+            <div style="text-align:right; font-weight:bold; border-top: 2px solid #000; padding-top:10px;">
+                TOTAL: ${dbLocal.percent}%
+            </div>
+            <div style="text-align:center; margin-top:20px; font-size:10px;">
+                *** FOCO NA MISSÃO - PC ***
             </div>
         `;
-        
+
         const opt = {
-            margin: 10,
-            filename: `Alvorada_${dbKey.replace(/\//g, '-')}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            margin: 0,
+            filename: `Relatório_${dbKey.replace(/\//g, '-')}.pdf`,
+            html2canvas: { scale: 3 },
             jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' }
         };
-        html2pdf().set(opt).from(element).save();
+        html2pdf().set(opt).from(ticket).save();
     }
 
-    document.getElementById('current-date').innerText = todayStr;
+    document.getElementById('date-box').innerText = todayStr;
 </script>
 </body>
 </html>
