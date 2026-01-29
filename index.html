@@ -11,7 +11,6 @@
     <title>Alvorada - 1% Todo Dia</title>
     
     <link rel="manifest" href="manifest.json">
-
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     
@@ -43,11 +42,14 @@
             transition: all 0.4s ease; min-height: 100vh;
         }
 
+        /* Transição Suave de Login */
         #auth-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease, visibility 0.8s;
         }
+        .auth-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
         .container {
             width: 100%; max-width: 450px;
@@ -71,13 +73,14 @@
             border-radius: 12px; outline: none; font-family: inherit; font-size: 16px !important;
         }
 
-        .todo-list { list-style: none; padding: 0; margin-bottom: 30px; }
         .todo-item { 
             background: var(--card-bg); border: 1px solid var(--input-border); 
             padding: 12px 15px; border-radius: 15px; display: flex; 
             align-items: center; margin-bottom: 12px; 
         }
         .todo-item.completed { background-color: var(--item-done-bg); }
+
+        .auth-toggle-link { margin-top: 15px; font-size: 0.85rem; color: var(--title-brown); cursor: pointer; text-decoration: underline; font-weight: 600; }
 
         #custom-confirm {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -93,19 +96,22 @@
 
 <div id="auth-container">
     <div class="container" style="text-align: center;">
-        <h1 style="margin-bottom: 20px;">Portaria Alvorada</h1>
+        <h1 id="auth-title" style="margin-bottom: 20px;">Portaria Alvorada</h1>
         <input type="email" id="auth-email" placeholder="E-mail do Agente" style="width: 100%; margin-bottom: 10px; box-sizing: border-box;">
         <input type="password" id="auth-password" placeholder="Senha" style="width: 100%; margin-bottom: 20px; box-sizing: border-box;">
+        
         <button onclick="handleAuth()" id="auth-btn" style="width:100%; padding:15px; background:var(--title-brown); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">ACESSAR SISTEMA</button>
-        <p id="auth-error" style="color:var(--delete-red); font-size:0.8rem; margin-top:10px;"></p>
+        
+        <p id="auth-toggle-text" class="auth-toggle-link" onclick="toggleAuthMode()">Não tem conta? Cadastre-se aqui</p>
+        <p id="auth-error" style="color:var(--delete-red); font-size:0.8rem; margin-top:15px; min-height: 1.2em;"></p>
     </div>
 </div>
 
 <div id="custom-confirm">
     <p id="confirm-msg" style="font-weight: 600;"></p>
     <div style="display: flex; justify-content: space-around; margin-top: 20px;">
-        <button style="padding: 8px 20px; border-radius: 10px; border: none; cursor: pointer;" onclick="closeConfirm(false)">Cancelar</button>
-        <button style="padding: 8px 20px; border-radius: 10px; border: none; cursor: pointer; background: var(--delete-red); color: white;" onclick="closeConfirm(true)">Excluir</button>
+        <button style="padding: 8px 20px; border-radius: 10px; border: none;" onclick="closeConfirm(false)">Cancelar</button>
+        <button style="padding: 8px 20px; border-radius: 10px; border: none; background: var(--delete-red); color: white;" onclick="closeConfirm(true)">Excluir</button>
     </div>
 </div>
 
@@ -126,7 +132,7 @@
         <button onclick="addTodo()" style="background:var(--add-red); border:none; padding:0 18px; border-radius:12px; color:white; font-weight:bold; font-size:1.5rem; cursor:pointer;">+</button>
     </div>
 
-    <ul id="todo-list" class="todo-list"></ul>
+    <ul id="todo-list" style="list-style: none; padding: 0; margin-bottom: 30px;"></ul>
     
     <div style="text-align: center;">
         <button onclick="firebase.auth().signOut()" style="background:none; border:none; color:var(--date-color); font-size:0.7rem; cursor:pointer; text-decoration:underline;">Sair do Sistema</button>
@@ -136,7 +142,7 @@
 <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 
 <script>
-    // CONFIGURAÇÃO FIREBASE - Cole suas chaves aqui
+    // CONFIGURAÇÃO FIREBASE
     const firebaseConfig = {
         apiKey: "SUA_API_KEY",
         authDomain: "SEU_PROJETO.firebaseapp.com",
@@ -150,7 +156,16 @@
     const dbFirestore = firebase.firestore();
     const todayStr = new Date().toLocaleDateString('pt-BR');
     let dbLocal = { todos: [], percent: 0 };
+    let isLoginMode = true;
     let confirmCallback = null;
+
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-title').innerText = isLoginMode ? "Portaria Alvorada" : "Recrutamento Alvorada";
+        document.getElementById('auth-btn').innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
+        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Não tem conta? Cadastre-se aqui" : "Já é um Agente? Faça Login";
+        document.getElementById('auth-error').innerText = "";
+    }
 
     function handleAuth() {
         const email = document.getElementById('auth-email').value;
@@ -158,24 +173,32 @@
         const btn = document.getElementById('auth-btn');
         const errorMsg = document.getElementById('auth-error');
         
-        if(!email || !password) { errorMsg.innerText = "Preencha todos os campos."; return; }
-        btn.innerText = "VERIFICANDO...";
+        if(!email || !password) { errorMsg.innerText = "⚠ Preencha todos os campos."; return; }
+        btn.innerText = "PROCESSANDO...";
         
-        firebase.auth().signInWithEmailAndPassword(email, password)
-            .catch(() => firebase.auth().createUserWithEmailAndPassword(email, password))
-            .catch(err => {
-                errorMsg.innerText = "Erro: Credenciais inválidas.";
-                document.getElementById('auth-password').value = '';
-                btn.innerText = "ACESSAR SISTEMA";
-            });
+        const action = isLoginMode 
+            ? firebase.auth().signInWithEmailAndPassword(email, password)
+            : firebase.auth().createUserWithEmailAndPassword(email, password);
+
+        action.catch(err => {
+            btn.innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
+            switch (err.code) {
+                case 'auth/wrong-password': errorMsg.innerText = "❌ Senha incorreta."; break;
+                case 'auth/user-not-found': errorMsg.innerText = "❌ Agente não localizado."; break;
+                case 'auth/weak-password': errorMsg.innerText = "❌ Senha fraca (mín. 6 caracteres)."; break;
+                case 'auth/email-already-in-use': errorMsg.innerText = "❌ E-mail já cadastrado."; break;
+                default: errorMsg.innerText = "❌ Erro: " + err.message;
+            }
+        });
     }
 
     firebase.auth().onAuthStateChanged(user => {
+        const container = document.getElementById('auth-container');
         if (user) {
-            document.getElementById('auth-container').style.display = 'none';
+            container.classList.add('auth-hidden');
             syncFirestore();
         } else {
-            document.getElementById('auth-container').style.display = 'flex';
+            container.classList.remove('auth-hidden');
         }
     });
 
