@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
-    <title>Alvorada - 1% Todo Dia</title>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"> <title>Alvorada</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -12,124 +10,102 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <style>
-        :root {
-            --bg-color: #fdfaf6; --card-bg: #ffffff; --title-brown: #a68966;
-            --add-red: #f28482; --check-green: #32cd32; --item-done-bg: #e8f5e9;
-            --stats-green: #7ebc89; --bar-bg: rgba(0,0,0,0.05);
-            --bar-1: #a8dadc; --bar-2: #ffcad4; --bar-3: #b9fbc0;
-            --text-color: #5d5d5d; --date-color: #999;
-            --input-border: #f0f0f0; --delete-red: #e74c3c;
+        :root { /* Paleta de cores extraída da imagem enviada */
+            --bg-deep: #1a1c24; /* Fundo escuro da página */
+            --card-dark: #2d3039; /* Fundo do painel centralizado */
+            --accent-brown: #a68966; /* Cor dos botões e títulos */
+            --text-gray: #999; /* Cor da data e frases */
+            --white: #ffffff; /* Texto principal */
+            --plus-bg: #f28482; /* Cor rosada do botão + */
         }
 
-        [data-theme="dark"] {
-            --bg-color: #1a1c22; --card-bg: #2d3039; --text-color: #e0e0e0;
-            --input-border: #3d414d; --title-brown: #c5b299;
-            --bar-bg: rgba(255,255,255,0.15); --item-done-bg: #1b3d2f;
+        body { /* Estilo do corpo com fundo escuro conforme imagem */
+            font-family: 'Quicksand', sans-serif; background-color: var(--bg-deep);
+            margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center;
+            color: var(--white); min-height: 100vh; transition: 0.4s;
         }
 
-        body {
-            font-family: 'Quicksand', sans-serif;
-            background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: env(safe-area-inset-top) 20px 100px 20px;
-            display: flex; flex-direction: column; align-items: center;
-            transition: all 0.4s ease; min-height: 100vh;
+        .container { /* Painel central arredondado da imagem */
+            width: 100%; max-width: 400px; background: var(--card-dark); 
+            padding: 30px; border-radius: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         }
 
-        /* Container Principal re-dimensionado */
-        .container {
-            width: 100%; max-width: 480px; background: var(--card-bg); 
-            padding: 35px; border-radius: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-top: 25px; box-sizing: border-box;
-        }
+        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        h1 { font-size: 1.5rem; margin: 0; font-weight: 500; }
+        #date-display { font-size: 0.85rem; color: var(--text-gray); margin-top: 5px; }
 
-        /* Títulos e Data conforme versões anteriores */
-        h1 { font-family: 'Comfortaa', cursive; font-size: 1.8rem; color: var(--title-brown); margin: 0; }
-        #date-box { font-size: 1.1rem; color: var(--title-brown); font-weight: 600; text-transform: capitalize; margin: 5px 0 25px 0; }
+        /* Barra de progresso fina e elegante da imagem */
+        .progress-track { background: rgba(255,255,255,0.1); height: 6px; border-radius: 10px; margin: 20px 0 5px; }
+        #progress-bar { height: 100%; width: 0%; background: #555; border-radius: 10px; transition: 0.8s; }
+        #stats-label { text-align: right; font-size: 0.75rem; color: #7ebc89; font-weight: bold; margin-bottom: 25px; }
 
-        /* Estilo das Missões */
-        .todo-item { 
-            background: var(--card-bg); border: 1px solid var(--input-border); 
-            padding: 16px; border-radius: 18px; display: flex; align-items: center; margin-bottom: 12px; 
-        }
-        .delete-btn { background: none; border: none; cursor: pointer; opacity: 0.3; margin-left: auto; font-size: 1.2rem; }
+        /* Input de conquista conforme a imagem */
+        .input-area { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 15px; margin-bottom: 30px; }
+        input { background: none; border: none; color: white; flex: 1; padding: 10px; outline: none; }
+        .add-btn { background: var(--plus-bg); border: none; color: white; width: 45px; height: 45px; border-radius: 12px; font-size: 1.5rem; cursor: pointer; }
 
-        /* Frases Motivacionais Centralizadas */
-        #quote-display { 
-            text-align: center; font-size: 0.9rem; font-style: italic; 
-            color: var(--date-color); margin: 30px 0; line-height: 1.5; padding: 0 10px;
-        }
+        /* Frase centralizada em itálico */
+        #quote-text { text-align: center; font-size: 0.85rem; font-style: italic; color: var(--text-gray); margin-top: 20px; }
 
-        /* Botão Gerar Relatório Solto */
-        #btn-pdf {
-            background: none; border: none; color: var(--date-color); 
-            font-size: 0.8rem; font-weight: bold; cursor: pointer; 
-            text-decoration: underline; margin-top: 10px; transition: 0.3s;
-        }
+        /* Círculos de Status (1 a 8) da imagem */
+        .status-circles { display: flex; justify-content: center; gap: 8px; margin: 30px 0; }
+        .circle { width: 35px; height: 35px; border: 1px solid #555; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #777; transition: 0.3s; }
+        .circle.done { border-color: #7ebc89; color: #7ebc89; }
 
-        /* Botões Flutuantes Lado a Lado */
-        .fab-container { position: fixed; bottom: 30px; right: 25px; display: flex; gap: 10px; z-index: 1000; }
-        .fab { 
-            width: 50px; height: 50px; border-radius: 50%; border: none; 
-            background: var(--title-brown); color: white; cursor: pointer; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 1.2rem;
-        }
+        /* Botão Salvar PDF centralizado e arredondado */
+        .pdf-btn { background: #555; border: none; color: white; padding: 12px 25px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; margin: 0 auto; }
 
-        /* Tela de Login */
-        #auth-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .auth-hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: 0.8s; }
+        /* Lista de tarefas (invisível na imagem mas necessária para o sistema) */
+        #todo-list { list-style: none; padding: 0; margin-bottom: 20px; }
+        .todo-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+        .todo-item input { margin-right: 10px; flex: none; }
 
-        /* Estilo Ticket para Impressão */
-        .ticket-hidden { display: none; }
+        /* Botões flutuantes para DarkMode e Sair */
+        .floating-controls { position: fixed; bottom: 30px; right: 25px; display: flex; gap: 10px; }
+        .control-btn { width: 45px; height: 45px; border-radius: 50%; border: none; background: #3d414d; color: white; cursor: pointer; }
+
+        /* Tela de Login integrada */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-deep); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .auth-hidden { display: none !important; }
     </style>
 </head>
-<body ondblclick="toggleFullScreen()"> <div id="auth-container">
+<body ondblclick="toggleFullScreen()"> <div id="auth-screen">
     <div class="container" style="text-align: center;">
         <h1 id="auth-title">Portaria Alvorada</h1>
-        <input type="text" id="auth-login" placeholder="Nome de Usuário" style="width: 100%; margin: 20px 0 10px; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); font-size: 16px;">
-        <input type="password" id="auth-password" placeholder="Senha" style="width: 100%; margin-bottom: 20px; padding: 15px; border-radius: 12px; border: 1px solid var(--input-border); font-size: 16px;">
-        <button onclick="handleAuth()" id="auth-btn" style="width:100%; padding:18px; background:var(--title-brown); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">ACESSAR SISTEMA</button>
-        <p id="auth-toggle-text" style="cursor:pointer; margin-top:20px; font-size:0.85rem;" onclick="toggleAuthMode()">Novo aqui? Registre seu Agente</p>
-        <p id="auth-error" style="color:var(--delete-red); font-size:0.8rem; margin-top:15px;"></p>
+        <input type="text" id="auth-user" placeholder="Nome do Agente" style="width: 80%; border-bottom: 1px solid #555; margin: 20px 0;">
+        <input type="password" id="auth-pass" placeholder="Senha" style="width: 80%; border-bottom: 1px solid #555; margin-bottom: 20px;">
+        <button onclick="handleAuth()" id="auth-btn" style="width:100%; padding:15px; background:var(--accent-brown); border-radius:15px; border:none; color:white; font-weight:bold;">ACESSAR</button>
+        <p onclick="toggleAuth()" id="auth-toggle" style="font-size:0.7rem; margin-top:15px; cursor:pointer;">Não tem conta? Cadastre-se</p>
     </div>
 </div>
 
-<div class="container" id="main-app">
-    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+<div class="container" id="app-content">
+    <header>
         <div>
             <h1>Alvorada</h1>
-            <div id="date-box"></div> </div>
-        <div id="streak-display" style="font-weight: 800; color: #ff9f43; font-size: 1.1rem;">🔥 0</div>
+            <div id="date-display"></div>
+        </div>
+        <div style="color: #ff9f43; font-weight: bold; font-size: 0.9rem;">🔥 <span id="streak-count">0</span> dias</div>
     </header>
 
-    <div style="background: var(--bar-bg); height: 12px; border-radius: 10px; overflow: hidden; margin-bottom: 8px;">
-        <div id="progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
-    </div>
-    <div id="stats" style="text-align: right; font-weight: 800; color: var(--stats-green); font-size: 0.9rem; margin-bottom: 30px;">Total: 0%</div>
-
-    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-        <input type="text" id="todo-input" placeholder="Nova missão..." style="flex:1; padding:15px; border-radius:15px; border:1px solid var(--input-border); outline:none; font-size:16px;">
-        <button onclick="addTodo()" style="background:var(--add-red); color:white; border:none; padding:0 22px; border-radius:15px; font-size:1.6rem; cursor:pointer;">+</button>
+    <div class="progress-track"><div id="progress-bar"></div></div>
+    <div id="stats-label">TOTAL: 0%</div> <div class="input-area">
+        <input type="text" id="todo-input" placeholder="O que vamos conquistar hoje?">
+        <button class="add-btn" onclick="addTodo()">+</button>
     </div>
 
-    <ul id="todo-list" style="padding:0; list-style:none;"></ul>
+    <ul id="todo-list"></ul> <div id="quote-text"></div> <div class="status-circles" id="circles-box"></div>
 
-    <div id="quote-display"></div>
-    <div style="text-align: center;">
-        <button id="btn-pdf" onclick="exportToPDF()">📄 Gerar Relatório (Ticket)</button>
-    </div>
+    <button class="pdf-btn" onclick="exportPDF()">📄 SALVAR EM PDF</button>
 </div>
 
-<div class="fab-container">
-    <button class="fab" onclick="toggleTheme()" title="Alterar Tema">🌙</button>
-    <button class="fab" onclick="firebase.auth().signOut()" title="Sair do Sistema">🚪</button>
+<div class="floating-controls">
+    <button class="control-btn" onclick="toggleTheme()">☀️</button>
+    <button class="control-btn" onclick="firebase.auth().signOut()">🚪</button>
 </div>
 
 <script>
-    // Configurações Firebase
+    // 1. Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -141,98 +117,99 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 20 Frases de Motivação Recuperadas
+    // 2. Banco de 20 Frases Motivacionais
     const quotes = [
-        "O sucesso é a soma de pequenos esforços repetidos dia após dia.", "Não pare até se orgulhar.", "A constância é a amiga da perfeição.", "1% melhor a cada dia.", "Vencer a si mesmo é a maior das vitórias.", "Grandes batalhas só são dadas a grandes guerreiros.", "A disciplina é a ponte entre metas e realizações.", "O que você faz hoje determina o seu amanhã.", "Não espere motivação, cultive disciplina.", "Foque no processo, o resultado é consequência.", "Sua única competição é quem você era ontem.", "Cada passo te aproxima do objetivo.", "A dor é temporária, o cargo é para sempre.", "Mantenha o foco nos estudos e a fé na missão.", "Agente: sua rotina é seu treinamento.", "Transforme o 'não consigo' em 'estou aprendendo'.", "Estude enquanto eles dormem, viva o que eles sonham.", "A aprovação é o destino, a constância é o caminho.", "Seja mais forte que sua melhor desculpa.", "Missão dada é missão cumprida."
+        "O impossível é um punhado de coisas fáceis.", "Não pare até se orgulhar.", "1% melhor a cada dia.",
+        "A constância vence o talento.", "Vencer a si mesmo é a maior vitória.", "Sua rotina é seu treinamento.",
+        "A disciplina é liberdade.", "Foque no processo, o resultado vem.", "Não espere motivação, cultive hábito.",
+        "Cada passo te aproxima da PC.", "A dor é passageira, o cargo é eterno.", "Missão dada é missão cumprida.",
+        "Seja mais forte que sua desculpa.", "Estude enquanto eles dormem.", "A aprovação exige sacrifício.",
+        "Mantenha o foco, a vaga é sua.", "O sucesso exige repetição.", "Paciência e persistência.",
+        "Transforme suor em glória.", "Alvorada: recomece todo dia."
     ];
 
-    let isLoginMode = true;
+    let isLogin = true;
     let dbLocal = { todos: [], percent: 0 };
     const dateObj = new Date();
-    // Formatação da Data: Quinta-feira, 29 de Janeiro (sem ano)
-    const options = { weekday: 'long', day: 'numeric', month: 'long' };
-    const todayStr = dateObj.toLocaleDateString('pt-BR', options);
-    const dbKey = dateObj.toLocaleDateString('pt-BR'); // Chave de busca (DD/MM/AAAA)
+    // Quinta-feira, 29 de Janeiro
+    const dateFull = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const dbID = dateObj.toLocaleDateString('pt-BR'); // ID da data para o banco
 
-    // Lógica de Autenticação (Login por Nome)
-    function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "Portaria Alvorada" : "Recrutamento Alvorada";
-        document.getElementById('auth-btn').innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
-        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Novo aqui? Registre seu Agente" : "Já é um Agente? Faça Login";
+    // Autenticação por Nome (Pacto Agente)
+    function toggleAuth() {
+        isLogin = !isLogin;
+        document.getElementById('auth-title').innerText = isLogin ? "Portaria Alvorada" : "Recrutamento Alvorada";
+        document.getElementById('auth-btn').innerText = isLogin ? "ACESSAR" : "CRIAR CONTA";
     }
 
     function handleAuth() {
-        const login = document.getElementById('auth-login').value.trim();
-        const password = document.getElementById('auth-password').value;
-        if(!login || !password) return;
-        const email = `${login.toLowerCase().replace(/\s/g, '')}@alvorada.com`; // Sanitização tática
-        const btn = document.getElementById('auth-btn');
-        btn.innerText = "PROCESSANDO...";
-        const action = isLoginMode ? firebase.auth().signInWithEmailAndPassword(email, password) : firebase.auth().createUserWithEmailAndPassword(email, password);
-        action.catch(err => { btn.innerText = "TENTAR NOVAMENTE"; document.getElementById('auth-error').innerText = "Erro: " + err.message; });
+        const user = document.getElementById('auth-user').value.trim();
+        const pass = document.getElementById('auth-pass').value;
+        if(!user || !pass) return;
+        const email = `${user.toLowerCase().replace(/\s/g,'')}@alvorada.com`; // Sanitização
+        const action = isLogin ? firebase.auth().signInWithEmailAndPassword(email, pass) : firebase.auth().createUserWithEmailAndPassword(email, pass);
+        action.catch(e => alert("Erro: " + e.message));
     }
 
     firebase.auth().onAuthStateChanged(user => {
         if(user) {
-            document.getElementById('auth-container').classList.add('auth-hidden');
+            document.getElementById('auth-screen').classList.add('auth-hidden');
             loadData();
-            showRandomQuote();
+            document.getElementById('quote-text').innerText = `"${quotes[Math.floor(Math.random()*quotes.length)]}"`;
         } else {
-            document.getElementById('auth-container').classList.remove('auth-hidden');
+            document.getElementById('auth-screen').classList.remove('auth-hidden');
         }
     });
 
-    // Banco de Dados e UI
+    // Banco de Dados e Interface
     async function loadData() {
         const user = firebase.auth().currentUser;
-        if(!user) return;
-        const doc = await db.collection("usuarios").doc(user.uid).collection("dias").doc(dbKey).get();
-        if(doc.exists) {
-            dbLocal = doc.data();
-        } else {
-            // Tenta herdar missões do último registro para constância
-            const last = await db.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
-            if(!last.empty) dbLocal.todos = last.docs[0].data().todos.map(t => ({...t, completed: false}));
-        }
+        const doc = await db.collection("usuarios").doc(user.uid).collection("dias").doc(dbID).get();
+        if(doc.exists) dbLocal = doc.data();
         updateUI();
-        updateStreak(user.uid);
     }
 
     function updateUI() {
         const list = document.getElementById('todo-list');
-        list.innerHTML = '';
+        const circles = document.getElementById('circles-box');
+        list.innerHTML = ''; circles.innerHTML = '';
         let done = 0;
-        dbLocal.todos.forEach(t => {
-            const li = document.createElement('li');
-            li.className = 'todo-item';
-            li.innerHTML = `
-                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo('${t.id}')" style="width:22px; height:22px; cursor:pointer;">
-                <span style="margin-left:15px; flex:1; font-weight:600; ${t.completed ? 'text-decoration:line-through; opacity:0.4' : ''}">${t.text}</span>
-                <button class="delete-btn" onclick="deleteTodo('${t.id}')">🗑️</button>
-            `;
+
+        dbLocal.todos.forEach((t, i) => {
+            // Renderiza lista para marcação
+            const li = document.createElement('li'); li.className = 'todo-item';
+            li.innerHTML = `<input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo('${t.id}')"> <span>${t.text}</span>`;
             list.appendChild(li);
             if(t.completed) done++;
+
+            // Renderiza os círculos 1 a 8 da imagem
+            if(i < 8) {
+                const c = document.createElement('div');
+                c.className = `circle ${t.completed ? 'done' : ''}`;
+                c.innerText = i + 1;
+                circles.appendChild(c);
+            }
         });
+
         const p = dbLocal.todos.length > 0 ? Math.round((done/dbLocal.todos.length)*100) : 0;
-        if(p === 100 && dbLocal.percent < 100) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        dbLocal.percent = p;
         document.getElementById('progress-bar').style.width = p + '%';
-        document.getElementById('stats').innerText = `Total: ${p}%`;
+        document.getElementById('stats-label').innerText = `TOTAL: ${p}%`;
+        dbLocal.percent = p;
+        if(p === 100) confetti({ particleCount: 100 });
         saveData();
     }
 
     function saveData() {
         const user = firebase.auth().currentUser;
-        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(dbKey).set(dbLocal);
+        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(dbID).set(dbLocal);
     }
 
     function addTodo() {
-        const inp = document.getElementById('todo-input');
-        if(!inp.value) return;
-        // ID ÚNICO via timestamp conforme pacto
-        dbLocal.todos.push({ id: Date.now().toString(), text: inp.value, completed: false });
-        inp.value = '';
+        const val = document.getElementById('todo-input').value;
+        if(!val) return;
+        // PACTO: DEFININDO ID ÚNICO
+        dbLocal.todos.push({ id: Date.now().toString(), text: val, completed: false });
+        document.getElementById('todo-input').value = '';
         updateUI();
     }
 
@@ -242,74 +219,25 @@
         updateUI();
     }
 
-    function deleteTodo(id) {
-        dbLocal.todos = dbLocal.todos.filter(x => x.id !== id);
-        updateUI();
-    }
-
-    // Funções de Interface
-    function showRandomQuote() {
-        document.getElementById('quote-display').innerText = `"${quotes[Math.floor(Math.random() * quotes.length)]}"`;
-    }
-
-    async function updateStreak(uid) {
-        const snap = await db.collection("usuarios").doc(uid).collection("dias").where("percent", "==", 100).get();
-        document.getElementById('streak-display').innerText = `🔥 ${snap.size}`;
-    }
-
-    function toggleTheme() {
-        const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', t);
-    }
-
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else document.exitFullscreen();
-    }
-
-    // EXPORTAR PDF - Estilo Ticket de Compra (Recuperado)
-    function exportToPDF() {
-        const ticket = document.createElement('div');
-        ticket.style.cssText = "width: 80mm; padding: 20px; font-family: 'Courier New', monospace; color: black; background: white;";
-        
-        let itemsHtml = dbLocal.todos.map(t => `
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 5px 0;">
-                <span>${t.text.substring(0, 20)}</span>
-                <span>${t.completed ? 'OK' : '--'}</span>
-            </div>
-        `).join('');
-
-        ticket.innerHTML = `
-            <div style="text-align:center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px;">
-                <h2 style="margin:0;">ALVORADA</h2>
-                <small>PROTOCOLO DE MISSÕES</small><br>
-                <small>${todayStr.toUpperCase()}</small>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1px solid #000;">
-                    <span>MISSÃO</span>
-                    <span>STATUS</span>
-                </div>
-                ${itemsHtml}
-            </div>
-            <div style="text-align:right; font-weight:bold; border-top: 2px solid #000; padding-top:10px;">
-                TOTAL: ${dbLocal.percent}%
-            </div>
-            <div style="text-align:center; margin-top:20px; font-size:10px;">
-                *** FOCO NA MISSÃO - PC ***
-            </div>
+    // Exportação PDF Estilo Ticket (Relatório)
+    function exportPDF() {
+        const content = document.createElement('div');
+        content.style.padding = "20px"; content.style.fontFamily = "monospace";
+        content.innerHTML = `
+            <center><h2>ALVORADA - RELATÓRIO</h2><p>${dateFull}</p></center>
+            <hr>
+            ${dbLocal.todos.map(t => `<div style="display:flex; justify-content:space-between;"><span>${t.text}</span><span>${t.completed ? 'OK' : '--'}</span></div>`).join('')}
+            <hr>
+            <div style="text-align:right"><b>TOTAL: ${dbLocal.percent}%</b></div>
         `;
-
-        const opt = {
-            margin: 0,
-            filename: `Relatório_${dbKey.replace(/\//g, '-')}.pdf`,
-            html2canvas: { scale: 3 },
-            jsPDF: { unit: 'mm', format: [80, 150], orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(ticket).save();
+        const opt = { margin: 10, filename: 'Relatorio_Alvorada.pdf', jsPDF: { unit: 'mm', format: [80, 150] } };
+        html2pdf().set(opt).from(content).save();
     }
 
-    document.getElementById('date-box').innerText = todayStr;
+    function toggleTheme() { document.body.style.filter = document.body.style.filter === 'invert(1)' ? 'invert(0)' : 'invert(1)'; }
+    function toggleFullScreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+
+    document.getElementById('date-display').innerText = dateFull;
 </script>
 </body>
 </html>
