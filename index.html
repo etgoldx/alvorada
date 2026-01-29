@@ -10,9 +10,12 @@
 
     <title>Alvorada - 1% todo dia</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #fdfaf6; --card-bg: #ffffff; --title-brown: #a68966;
@@ -32,24 +35,22 @@
         body {
             font-family: 'Quicksand', sans-serif;
             background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; 
-            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+            margin: 0; padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
             display: flex; flex-direction: column; align-items: center;
             transition: all 0.4s ease; touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent; min-height: 100vh;
         }
 
         .container {
             width: 100%; max-width: 450px;
             background: var(--card-bg); padding: 30px; border-radius: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-bottom: 20px; position: relative; box-sizing: border-box;
-            margin-top: 20px;
+            margin-top: 20px; margin-bottom: 20px; position: relative; box-sizing: border-box;
         }
 
+        header { margin-bottom: 35px; }
         h1 { font-family: 'Comfortaa', cursive; font-size: 1.5rem; margin: 0; color: var(--title-brown); }
-        #current-date { font-size: 0.8rem; color: var(--date-color); font-weight: 500; text-transform: capitalize; margin-top: 4px; }
+        #current-date { font-size: 0.82rem; color: var(--date-color); font-weight: 600; text-transform: capitalize; margin-top: 8px; display: block; }
         .streak-badge { font-size: 0.9rem; font-weight: 700; color: #ff9f43; display: flex; align-items: center; gap: 5px; }
 
         .progress-container { background: var(--bar-bg); border-radius: 20px; height: 14px; margin-bottom: 10px; overflow: hidden; }
@@ -66,7 +67,7 @@
         .todo-item.completed { background-color: var(--item-done-bg); border-color: transparent; }
         .todo-text { flex: 1; font-weight: 500; outline: none; font-size: 0.95rem; }
 
-        /* Estilo do Modal de Confirmação Customizado */
+        /* Modal Customizado */
         #custom-confirm {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: var(--card-bg); border: 2px solid var(--title-brown); padding: 25px;
@@ -109,36 +110,75 @@
     </div>
 
     <ul id="todo-list" class="todo-list"></ul>
-    <div id="motivation-quote" style="text-align:center; font-size:0.8rem; opacity:0.7;"></div>
 </div>
 
-<div class="footer-actions" style="display:flex; justify-content:center; gap:10px;">
-    <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
-    <button style="padding: 10px 20px; border-radius: 12px; border: none; background: var(--title-brown); color: white;" onclick="window.print()">Gerar Relatório</button>
-</div>
-
-<div id="history-grid" style="display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 20px;"></div>
+<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 
 <script>
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('pt-BR');
-    let db = JSON.parse(localStorage.getItem('alvoradaDB')) || {};
-    let currentTheme = localStorage.getItem('theme') || 'light';
+    // CONFIGURAÇÃO FIREBASE (Substitua pelos seus dados)
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY",
+        authDomain: "SEU_PROJETO.firebaseapp.com",
+        projectId: "SEU_PROJETO",
+        storageBucket: "SEU_PROJETO.appspot.com",
+        messagingSenderId: "SEU_ID",
+        appId: "SUA_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const dbFirestore = firebase.firestore();
+    const todayStr = new Date().toLocaleDateString('pt-BR');
+    let dbLocal = JSON.parse(localStorage.getItem('alvoradaDB')) || {};
     let confirmCallback = null;
 
-    // Lógica 1: Persistência de tarefas do dia anterior
-    if (!db[todayStr]) {
-        const dates = Object.keys(db).sort().reverse();
-        const lastTasks = dates.length > 0 ? db[dates[0]].todos.map(t => ({...t, completed: false})) : [];
-        db[todayStr] = { todos: lastTasks, percent: 0 };
-    }
-
+    // Função para alternar Fullscreen (Entra e Sai com dblclick)
     function toggleFullScreen() {
         if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-        } else if (document.exitFullscreen) {
-            document.exitFullscreen();
+            document.documentElement.requestFullscreen().catch(e => console.log(e));
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
         }
+    }
+
+    // Modal de confirmação visual
+    function showConfirm(msg, callback) {
+        document.getElementById('confirm-msg').innerText = msg;
+        document.getElementById('custom-confirm').style.display = 'block';
+        confirmCallback = callback;
+    }
+
+    function closeConfirm(res) {
+        document.getElementById('custom-confirm').style.display = 'none';
+        if (confirmCallback) confirmCallback(res);
+    }
+
+    // Lógica de Notificações (1 hora)
+    if (Notification.permission !== "granted") Notification.requestPermission();
+    setInterval(() => {
+        const pending = dbLocal[todayStr]?.todos.filter(t => !t.completed).length || 0;
+        if (pending > 0 && Notification.permission === "granted") {
+            new Notification("Alvorada", { body: `Agente, você tem ${pending} tarefas pendentes.` });
+        }
+    }, 3600000);
+
+    async function syncFirestore() {
+        // Tenta baixar os dados do dia ou carregar do anterior se estiver vazio
+        const docRef = dbFirestore.collection("alvorada").doc(todayStr);
+        const docSnap = await docRef.get();
+
+        if (docSnap.exists()) {
+            dbLocal[todayStr] = docSnap.data();
+        } else {
+            // Persistência: busca o último dia registrado
+            const querySnapshot = await dbFirestore.collection("alvorada").orderBy("__name__", "desc").limit(1).get();
+            if (!querySnapshot.empty) {
+                const lastData = querySnapshot.docs[0].data();
+                dbLocal[todayStr] = { todos: lastData.todos.map(t => ({...t, completed: false})), percent: 0 };
+            } else {
+                dbLocal[todayStr] = { todos: [], percent: 0 };
+            }
+        }
+        updateUI();
     }
 
     function updateUI() {
@@ -146,7 +186,7 @@
         list.innerHTML = '';
         let completed = 0;
         
-        db[todayStr].todos.forEach((todo, index) => {
+        dbLocal[todayStr].todos.forEach((todo, index) => {
             const li = document.createElement('li');
             li.className = 'item-wrapper';
             li.innerHTML = `
@@ -159,72 +199,41 @@
             if (todo.completed) completed++;
         });
 
-        const percent = db[todayStr].todos.length > 0 ? Math.round((completed / db[todayStr].todos.length) * 100) : 0;
-        db[todayStr].percent = percent;
+        const percent = dbLocal[todayStr].todos.length > 0 ? Math.round((completed / dbLocal[todayStr].todos.length) * 100) : 0;
+        dbLocal[todayStr].percent = percent;
         document.getElementById('progress-bar').style.width = percent + '%';
         document.getElementById('stats').innerText = `TOTAL: ${percent}%`;
         
-        localStorage.setItem('alvoradaDB', JSON.stringify(db));
+        localStorage.setItem('alvoradaDB', JSON.stringify(dbLocal));
+        dbFirestore.collection("alvorada").doc(todayStr).set(dbLocal[todayStr]);
         updateCounter();
     }
 
-    // Lógica 4: Contador de dias concluídos (não reseta)
     function updateCounter() {
-        const totalCompletedDays = Object.values(db).filter(day => day.percent === 100).length;
-        document.getElementById('streak-display').innerText = `🔥 ${totalCompletedDays} dias`;
+        const totalDays = Object.values(dbLocal).filter(d => d.percent === 100).length;
+        document.getElementById('streak-display').innerText = `🔥 ${totalDays} dias`;
     }
 
-    // Lógica 5: Modal Customizado para Exclusão
-    function deleteHistoryDay(date) {
-        showConfirm(`Deseja remover o registro estratégico de ${date}?`, (confirmed) => {
-            if (confirmed) {
-                delete db[date];
-                if (date === todayStr) db[todayStr] = { todos: [], percent: 0 };
-                updateUI();
-            }
+    function toggleTodo(i) { dbLocal[todayStr].todos[i].completed = !dbLocal[todayStr].todos[i].completed; updateUI(); }
+    function deleteTodo(i) { 
+        showConfirm("Remover esta missão do seu registro?", (ok) => {
+            if(ok) { dbLocal[todayStr].todos.splice(i, 1); updateUI(); }
         });
     }
-
-    function showConfirm(msg, callback) {
-        document.getElementById('confirm-msg').innerText = msg;
-        document.getElementById('custom-confirm').style.display = 'block';
-        confirmCallback = callback;
-    }
-
-    function closeConfirm(res) {
-        document.getElementById('custom-confirm').style.display = 'none';
-        if (confirmCallback) confirmCallback(res);
-    }
-
-    // Lógica 2: Notificações de tarefas pendentes (1h)
-    if (Notification.permission !== "granted") Notification.requestPermission();
-    
-    setInterval(() => {
-        const pending = db[todayStr].todos.filter(t => !t.completed).length;
-        if (pending > 0 && Notification.permission === "granted") {
-            new Notification("Alvorada: Atenção Agente", {
-                body: `Você ainda possui ${pending} missões pendentes para hoje. Avante!`,
-                icon: "https://cdn-icons-png.flaticon.com/512/1611/1611154.png"
-            });
-        }
-    }, 3600000); // 1 hora
-
-    function toggleTodo(i) { db[todayStr].todos[i].completed = !db[todayStr].todos[i].completed; updateUI(); }
-    function deleteTodo(i) { db[todayStr].todos.splice(i, 1); updateUI(); }
     function addTodo() {
         const val = document.getElementById('todo-input').value;
-        if(val) { db[todayStr].todos.push({text: val, completed: false}); updateUI(); }
+        if(val) { dbLocal[todayStr].todos.push({text: val, completed: false}); updateUI(); }
         document.getElementById('todo-input').value = '';
     }
 
     function toggleTheme() {
-        currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', currentTheme);
-        localStorage.setItem('theme', currentTheme);
+        const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
     }
 
-    document.getElementById('current-date').innerText = today.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
-    updateUI();
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+    syncFirestore();
 </script>
 </body>
 </html>
