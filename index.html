@@ -13,6 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
 
     <style>
+        /* Variáveis de Estilo (Modo Light) */
         :root {
             --bg-color: #fdfaf6; --card-bg: #ffffff; --title-brown: #a68966;
             --add-red: #f28482; --check-green: #b9fbc0; --item-done-bg: #f8fcf8;
@@ -22,6 +23,7 @@
             --input-border: #f0f0f0; --delete-red: #e74c3c;
         }
 
+        /* Variáveis de Estilo (Modo Dark) */
         [data-theme="dark"] {
             --bg-color: #1a1c22; --card-bg: #2d3039; --text-color: #e0e0e0;
             --input-border: #3d414d; --title-brown: #c5b299;
@@ -35,7 +37,7 @@
             transition: background 0.4s ease;
         }
 
-        /* Dimensionamento Excelente: Board Único */
+        /* Container Único para evitar "Caixa fora de Caixa" */
         .board {
             width: 100%; max-width: 450px; background: var(--card-bg); 
             padding: 35px 25px; border-radius: 40px; 
@@ -44,57 +46,42 @@
             position: relative;
         }
 
-        /* Cabeçalho */
+        /* Topo: Título e Streak */
         header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
         h1 { font-family: 'Comfortaa', cursive; font-size: 1.7rem; margin: 0; color: var(--title-brown); }
         #current-date { font-size: 0.85rem; color: var(--date-color); text-transform: capitalize; margin-top: 5px; }
         .streak-badge { font-weight: 800; color: #ff9f43; font-size: 1.1rem; }
 
-        /* Progresso */
+        /* Barra de Progresso Tática */
         .progress-container { background: var(--bar-bg); border-radius: 20px; height: 12px; margin: 25px 0 8px; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 1s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 1s ease-in-out; }
         .stats-text { font-size: 0.85rem; text-align: right; margin-bottom: 30px; font-weight: 700; color: var(--stats-green); }
 
-        /* Input Group */
+        /* Área de Input */
         .input-group { display: flex; gap: 12px; margin-bottom: 30px; }
         input[type="text"] { flex: 1; padding: 16px; border: 2px solid var(--input-border); background: transparent; color: var(--text-color); border-radius: 18px; outline: none; font-size: 16px; }
-        .add-btn { background-color: var(--add-red); border: none; width: 55px; border-radius: 18px; cursor: pointer; color: white; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
-        .add-btn:active { transform: scale(0.9); }
+        .add-btn { background-color: var(--add-red); border: none; width: 55px; border-radius: 18px; cursor: pointer; color: white; font-size: 1.8rem; }
 
-        /* Tarefas */
+        /* Lista de Missões */
         .todo-list { list-style: none; padding: 0; margin: 0; }
         .todo-item { 
             display: flex; align-items: center; padding: 15px; background: rgba(0,0,0,0.02);
             border-radius: 20px; margin-bottom: 12px; gap: 12px; border: 1px solid var(--input-border);
         }
         .todo-item.completed { background-color: var(--item-done-bg); opacity: 0.8; }
-        input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--stats-green); cursor: pointer; }
         .todo-text { flex: 1; font-weight: 500; font-size: 0.95rem; }
-        .delete-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem; filter: grayscale(1); opacity: 0.4; transition: 0.3s; }
-        .delete-btn:hover { opacity: 1; filter: grayscale(0); }
+        .delete-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem; opacity: 0.4; }
 
-        /* Frases Motivacionais */
-        #motivation-quote { text-align: center; font-size: 0.85rem; margin-top: 30px; line-height: 1.5; color: var(--date-color); font-style: italic; min-height: 40px; }
-
-        /* Bolinhas de Histórico (Dias) */
+        /* Histórico de Bolinhas no final do Card */
         .history-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--input-border); }
-        .day-dot { 
-            width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--input-border); 
-            background: none; color: var(--date-color); cursor: pointer; font-size: 0.75rem; 
-            font-weight: 700; transition: 0.3s; position: relative;
-        }
+        .day-dot { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--input-border); background: none; color: var(--date-color); cursor: pointer; font-size: 0.75rem; font-weight: 700; transition: 0.3s; position: relative; }
         .day-dot.completed { border-color: var(--stats-green); color: var(--stats-green); }
-        .day-dot:hover::after {
-            content: attr(data-summary); position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
-            background: var(--title-brown); color: white; padding: 8px 12px; border-radius: 10px;
-            font-size: 0.7rem; white-space: nowrap; z-index: 10; pointer-events: none;
-        }
 
-        /* Botões Flutuantes (Direita) */
+        /* Botões Flutuantes à Direita */
         .fab-container { position: fixed; bottom: 30px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
         .fab { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--title-brown); color: white; cursor: pointer; font-size: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; }
 
-        /* Auth Screen */
+        /* Tela de Login */
         #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .hidden { display: none !important; }
     </style>
@@ -104,8 +91,8 @@
 <div id="auth-screen">
     <div class="board" style="text-align: center; margin-top: 0;">
         <h1 style="margin-bottom: 35px;">Agente Alvorada</h1>
-        <input type="text" id="auth-user" placeholder="Codinome do Agente" style="width:100%; margin-bottom:12px; box-sizing: border-box;" class="auth-input">
-        <input type="password" id="auth-pass" placeholder="Senha de Acesso" style="width:100%; margin-bottom:25px; box-sizing: border-box;" class="auth-input">
+        <input type="text" id="auth-user" placeholder="Codinome do Agente" style="width:100%; margin-bottom:12px; box-sizing: border-box; padding:15px; border-radius:15px; border:1px solid #ddd;">
+        <input type="password" id="auth-pass" placeholder="Senha de Acesso" style="width:100%; margin-bottom:25px; box-sizing: border-box; padding:15px; border-radius:15px; border:1px solid #ddd;">
         <button onclick="handleAuth()" style="width:100%; padding:18px; background:var(--title-brown); color:white; border:none; border-radius:18px; font-weight:bold; cursor:pointer;">ACESSAR PAINEL</button>
     </div>
 </div>
@@ -113,26 +100,32 @@
 <div class="board" id="main-app">
     <header>
         <div>
-            <h1>Alvorada</h1> <div id="current-date"></div> </div>
-        <div id="streak-display" class="streak-badge">🔥 0 dias</div> </header>
+            <h1>Alvorada</h1> 
+            <div id="current-date"></div> 
+        </div>
+        <div id="streak-display" class="streak-badge">🔥 0 dias</div> 
+    </header>
 
-    <div class="progress-container">
-        <div id="progress-bar" class="progress-bar"></div>
-    </div>
-    <div id="stats" class="stats-text">TOTAL: 0%</div> <div class="input-group">
+    <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+    <div id="stats" class="stats-text">TOTAL: 0%</div> 
+
+    <div class="input-group">
         <input type="text" id="todo-input" placeholder="Nova missão tática...">
         <button class="add-btn" onclick="addTodo()">+</button>
     </div>
 
-    <ul id="todo-list" class="todo-list"></ul> <div id="motivation-quote"></div> <div class="history-grid" id="history-grid"></div>
+    <ul id="todo-list" class="todo-list"></ul> 
+    <div id="motivation-quote" style="text-align:center; font-size:0.85rem; margin-top:25px; font-style:italic; opacity:0.7;"></div> 
+    <div class="history-grid" id="history-grid"></div>
 </div>
 
 <div class="fab-container">
-    <button class="fab" id="theme-btn" onclick="toggleTheme()">🌙</button> <button class="fab" onclick="firebase.auth().signOut()">🚪</button>
+    <button class="fab" id="theme-btn" onclick="toggleTheme()">🌙</button> 
+    <button class="fab" onclick="firebase.auth().signOut()">🚪</button>
 </div>
 
 <script>
-    // 1. Configurações Firebase Studio
+    // Configurações do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -145,10 +138,11 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Identificador do dia atual para o banco de dados
     const todayID = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
     let agentData = { todos: [], percent: 0 };
 
-    // 2. Frases Motivacionais (Protocolo Alvorada)
+    // 20 Frases Motivacionais (Protocolo Agente PC)
     const missionQuotes = [
         "A constância é a mãe da aprovação.", "1% melhor a cada novo dia.", "Não pare até se orgulhar.",
         "A disciplina é a ponte entre metas e realizações.", "Vencer a si mesmo é a maior das vitórias.",
@@ -161,44 +155,50 @@
         "O sucesso é o acúmulo de pequenos acertos diários.", "Agente: sua rotina é seu maior treinamento."
     ];
 
-    // 3. Segurança e Login
+    // Lógica de Autenticação (Trata codinome como email)
     function handleAuth() {
         const user = document.getElementById('auth-user').value.trim();
         const pass = document.getElementById('auth-pass').value;
-        const email = `${user.toLowerCase()}@alvorada.com`;
+        const email = `${user.toLowerCase()}@alvorada.com`; // Converte usuário em email interno
         
         auth.signInWithEmailAndPassword(email, pass)
-            .catch(() => auth.createUserWithEmailAndPassword(email, pass))
-            .catch(err => alert("Erro na Base: " + err.message));
+            .catch(() => auth.createUserWithEmailAndPassword(email, pass)) // Cria se não existir
+            .catch(err => alert("Erro: " + err.message));
     }
 
+    // Monitor de estado de login
     auth.onAuthStateChanged(user => {
         if(user) {
-            document.getElementById('auth-screen').classList.add('hidden');
-            loadAgentData();
+            document.getElementById('auth-screen').classList.add('hidden'); // Esconde login
+            loadAgentData(); // Carrega dados do Agente
         } else {
-            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden'); // Mostra login
         }
     });
 
-    // 4. Lógica de Dados (Persistência X para Y)
+    // Carrega dados do Firestore com lógica de persistência X para Y
     async function loadAgentData() {
-        const uid = auth.currentUser.uid;
+        const uid = auth.currentUser.uid; // ID do usuário logado
         const doc = await db.collection("usuarios").doc(uid).collection("dias").doc(todayID).get();
         
         if(doc.exists) {
-            agentData = doc.data();
+            agentData = doc.data(); // Carrega dados se o dia já existir
         } else {
-            // Se for um novo dia, mantém as tarefas mas reseta o check
+            // Busca o último dia registrado para herdar as tarefas
             const last = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
-            if(!last.empty) agentData.todos = last.docs[0].data().todos.map(t => ({...t, completed: false}));
+            if(!last.empty) {
+                // Herda tarefas do dia anterior, resetando o status de completado
+                agentData.todos = last.docs[0].data().todos.map(t => ({...t, completed: false}));
+            }
         }
         
+        // Sorteia frase motivacional
         document.getElementById('motivation-quote').innerText = `"${missionQuotes[Math.floor(Math.random()*missionQuotes.length)]}"`;
-        updateBoard();
-        updateHistory(uid);
+        updateBoard(); // Renderiza a lista
+        updateHistory(uid); // Renderiza as bolinhas
     }
 
+    // Atualiza a Interface e salva no Firebase
     function updateBoard() {
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
@@ -217,34 +217,40 @@
         });
 
         const perc = agentData.todos.length > 0 ? Math.round((done / agentData.todos.length) * 100) : 0;
-        agentData.percent = perc;
+        agentData.percent = perc; // Atualiza porcentagem do objeto
         
         document.getElementById('progress-bar').style.width = perc + '%';
         document.getElementById('stats').innerText = `TOTAL: ${perc}%`;
         
-        if(perc === 100) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        saveToCloud();
+        if(perc === 100) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); // Efeito de vitória
+        saveToCloud(); // Salva estado atual
     }
 
+    // Função de persistência no Cloud Firestore
     function saveToCloud() {
         const uid = auth.currentUser.uid;
+        // Salva os dados no ID do dia específico
         db.collection("usuarios").doc(uid).collection("dias").doc(todayID).set(agentData);
     }
 
+    // Adiciona nova tarefa com ID definido pelo Firebase/Timestamp
     function addTodo() {
         const input = document.getElementById('todo-input');
         if(input.value) {
-            // PACTO: ID definido por timestamp + nome tarefa
-            agentData.todos.push({ text: input.value, completed: false, id: Date.now() });
+            // Define ID único para a tarefa dentro do array
+            agentData.todos.push({ text: input.value, completed: false, id: "TASK-" + Date.now() });
             input.value = '';
             updateBoard();
         }
     }
 
+    // Alterna status da tarefa
     function toggleTask(i) { agentData.todos[i].completed = !agentData.todos[i].completed; updateBoard(); }
+    
+    // Remove tarefa da lista
     function deleteTask(i) { agentData.todos.splice(i, 1); updateBoard(); }
 
-    // 5. Bolinhas de Histórico Flutuantes
+    // Atualiza a grade de bolinhas de histórico
     async function updateHistory(uid) {
         const snap = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(10).get();
         const grid = document.getElementById('history-grid');
@@ -256,19 +262,15 @@
             const dot = document.createElement('button');
             dot.className = `day-dot ${d.percent === 100 ? 'completed' : ''}`;
             dot.innerText = idx + 1;
-            
-            // Resumo no hover/clique
-            const summary = `Dia ${doc.id}: ${d.percent}% concluído`;
-            dot.setAttribute('data-summary', summary);
-            dot.onclick = () => alert(summary);
-            
+            dot.setAttribute('data-summary', `Dia ${doc.id}: ${d.percent}%`);
+            dot.onclick = () => alert(`Resumo ${doc.id}\nConcluído: ${d.percent}%`);
             grid.appendChild(dot);
             if(d.percent === 100) streak++;
         });
         document.getElementById('streak-display').innerText = `🔥 ${streak} dias`;
     }
 
-    // 6. Tema e Fullscreen
+    // Alterna Tema Dark/Light
     function toggleTheme() {
         const root = document.documentElement;
         const isDark = root.getAttribute('data-theme') === 'dark';
@@ -276,11 +278,13 @@
         document.getElementById('theme-btn').innerText = isDark ? '🌙' : '☀️';
     }
 
+    // Ativa/Desativa Tela Cheia no Double Click
     function toggleFullScreen() {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else if (document.exitFullscreen) document.exitFullscreen();
     }
 
+    // Define data no cabeçalho
     document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
 </script>
 </body>
