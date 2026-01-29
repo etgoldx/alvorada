@@ -1,6 +1,363 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"> <meta name="apple-mobile-web-app-capable" content="yes"> <meta name="mobile-web-app-capable" content="yes"> <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <title>Alvorada - Sistema de Gestão de Missões</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script> <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script> <style>
+        /* --- BLOCO DE ESTILIZAÇÃO (CSS) --- */
+        :root {
+            /* Variáveis de Cores (Facilitam a manutenção e o Dark Mode) */
+            --bg-deep: #1a1c24; /* Fundo escuro profundo extraído da sua imagem */
+            --card-dark: #2d3039; /* Cor do painel de tarefas */
+            --accent-brown: #a68966; /* Marrom dourado dos títulos */
+            --text-main: #ffffff; /* Branco para leitura clara */
+            --text-dim: #999999; /* Cinza para informações secundárias */
+            --check-green: #7ebc89; /* Verde para metas batidas */
+            --delete-red: #f28482; /* Vermelho suave para o botão + e lixeira */
+            --bar-track: rgba(255, 255, 255, 0.1); /* Rastro da barra de progresso */
+        }
+
+        /* Configuração do Corpo da Página */
+        body {
+            font-family: 'Quicksand', sans-serif; /* Fonte arredondada e moderna */
+            background-color: var(--bg-deep); /* Aplica o fundo escuro */
+            color: var(--text-main); /* Aplica o texto branco */
+            margin: 0; padding: env(safe-area-inset-top) 20px 100px 20px; /* Padding extra embaixo para não cobrir os botões flutuantes */
+            display: flex; flex-direction: column; align-items: center; /* Centraliza o conteúdo horizontalmente */
+            min-height: 100vh; transition: background 0.5s ease; /* Transição suave na troca de tema */
+            overflow-x: hidden; /* Evita rolagem lateral acidental */
+        }
+
+        /* Estilização do Painel Central (Container) */
+        .container {
+            width: 100%; max-width: 480px; /* Largura máxima para não ficar esticado em tablets */
+            background: var(--card-dark); padding: 40px 30px; /* Espaçamento interno generoso */
+            border-radius: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); /* Sombra pesada para dar profundidade */
+            margin-top: 30px; box-sizing: border-box; position: relative;
+        }
+
+        /* Cabeçalho Interno */
+        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        h1 { font-family: 'Comfortaa', cursive; font-size: 1.9rem; color: var(--accent-brown); margin: 0; }
+        #date-box { font-size: 1.1rem; color: var(--accent-brown); font-weight: 600; text-transform: capitalize; margin-top: 6px; }
+        #streak-display { font-weight: 800; color: #ff9f43; font-size: 1.3rem; }
+
+        /* Barra de Progresso e Stats */
+        .progress-wrapper { background: var(--bar-track); height: 12px; border-radius: 10px; overflow: hidden; margin: 25px 0 8px; }
+        #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #a8dadc, #ffcad4, #b9fbc0); transition: 1.2s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        #stats-label { text-align: right; font-weight: 800; color: var(--check-green); font-size: 0.9rem; margin-bottom: 35px; }
+
+        /* Campo de Entrada (Input) */
+        .input-group { display: flex; gap: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 22px; margin-bottom: 35px; border: 1px solid rgba(255,255,255,0.05); }
+        input[type="text"] { background: none; border: none; color: white; flex: 1; padding: 12px; outline: none; font-size: 17px; }
+        .btn-add { background: var(--delete-red); color: white; border: none; width: 55px; height: 55px; border-radius: 18px; font-size: 2rem; cursor: pointer; transition: 0.2s; }
+        .btn-add:hover { transform: translateY(-2px); filter: brightness(1.1); }
+
+        /* Estilo dos Itens da Lista (Missões) */
+        #todo-list { padding: 0; list-style: none; margin: 0; }
+        .todo-item { 
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); 
+            padding: 20px; border-radius: 22px; display: flex; align-items: center; 
+            margin-bottom: 15px; transition: 0.3s; animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .todo-item input[type="checkbox"] { width: 26px; height: 26px; cursor: pointer; accent-color: var(--check-green); }
+        .todo-item span { margin-left: 18px; flex: 1; font-weight: 500; font-size: 1.1rem; }
+        .delete-icon { background: none; border: none; cursor: pointer; opacity: 0.2; font-size: 1.4rem; transition: 0.3s; }
+        .delete-icon:hover { opacity: 1; color: var(--delete-red); }
+
+        /* Área Motivacional e Círculos */
+        #quote-display { text-align: center; font-size: 1rem; font-style: italic; color: var(--text-dim); margin: 40px 0; line-height: 1.6; }
+        .circles-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 40px; }
+        .status-circle { width: 42px; height: 42px; border: 2px solid #444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: #666; transition: 0.5s; }
+        .status-circle.active { border-color: var(--check-green); color: var(--check-green); box-shadow: 0 0 15px rgba(126, 188, 137, 0.4); transform: scale(1.1); }
+
+        /* Botão de Relatório Solto */
+        .btn-report { background: none; border: 1.8px solid var(--accent-brown); color: var(--accent-brown); padding: 14px 35px; border-radius: 25px; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: block; margin: 0 auto; transition: 0.3s; }
+        .btn-report:active { background: var(--accent-brown); color: white; }
+
+        /* Controles Flutuantes (FIXO) */
+        .fab-group { position: fixed; bottom: 35px; right: 25px; display: flex; gap: 15px; z-index: 1000; }
+        .fab-btn { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--card-dark); color: white; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.5); font-size: 1.5rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Login Screen */
+        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-deep); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .auth-card { width: 100%; max-width: 400px; text-align: center; }
+        .auth-hidden { display: none !important; }
+        .auth-input { width: 100%; padding: 20px; margin-bottom: 18px; border-radius: 18px; border: 1.5px solid #444; background: #222; color: white; box-sizing: border-box; font-size: 16px; }
+        .auth-main-btn { width: 100%; padding: 20px; background: var(--accent-brown); border: none; border-radius: 18px; color: white; font-weight: bold; cursor: pointer; font-size: 1.1rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body ondblclick="toggleFullScreen()"> <div id="auth-overlay">
+    <div class="container auth-card">
+        <h1 id="auth-label">Portaria Alvorada</h1> <div style="margin-top: 40px;">
+            <input type="text" id="user-name" class="auth-input" placeholder="Nome de Agente"> <input type="password" id="user-pass" class="auth-input" placeholder="Senha de Acesso"> <button onclick="handleAuth()" id="btn-auth-action" class="auth-main-btn">ENTRAR NO SISTEMA</button> <p onclick="toggleAuthMode()" id="auth-switch" style="font-size: 0.9rem; margin-top: 25px; cursor: pointer; color: var(--text-dim); text-decoration: underline;">Não sou cadastrado? Criar Conta</p>
+            <p id="auth-error-msg" style="color: var(--delete-red); font-size: 0.85rem; margin-top: 20px;"></p>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="main-interface">
+    <header>
+        <div>
+            <h1>Alvorada</h1> <div id="date-box"></div> </div>
+        <div id="streak-display">🔥 0</div> </header>
+
+    <div class="progress-wrapper"><div id="progress-bar"></div></div>
+    <div id="stats-label">Total: 0%</div> <div class="input-group">
+        <input type="text" id="mission-input" placeholder="O que vamos conquistar hoje?">
+        <button class="btn-add" onclick="addMission()">+</button>
+    </div>
+
+    <ul id="todo-list"></ul>
+
+    <div id="quote-display">"Iniciando Protocolo..."</div>
+
+    <div class="circles-container" id="circles-grid"></div>
+
+    <button class="btn-report" onclick="generateTicket()">📄 GERAR RELATÓRIO (TICKET)</button>
+</div>
+
+<div class="fab-group">
+    <button class="fab-btn" onclick="toggleDarkMode()" title="Alternar Visão Noturna">🌙</button> <button class="fab-btn" onclick="firebase.auth().signOut()" title="Encerrar Sessão">🚪</button> </div>
+
+<script>
+    /* --- LÓGICA DE PROGRAMAÇÃO (JAVASCRIPT) --- */
+    
+    // 1. Configuração do Firebase Studio
+    const firebaseConfig = {
+      apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
+      authDomain: "alvorada-23e01.firebaseapp.com",
+      projectId: "alvorada-23e01",
+      storageBucket: "alvorada-23e01.firebasestorage.app",
+      messagingSenderId: "173441904175",
+      appId: "1:173441904175:web:7d3a7aba8b90afa05ea0da"
+    };
+    firebase.initializeApp(firebaseConfig); // Inicializa a conexão
+    const db = firebase.firestore(); // Conecta ao banco de dados Firestore
+
+    // 2. Repositório de 20 Frases Motivacionais (Recuperado)
+    const tacticalQuotes = [
+        "O sucesso é a soma de pequenos esforços repetidos diariamente.", 
+        "Não pare até se orgulhar de quem você se tornou.",
+        "A constância é a melhor amiga da perfeição.", 
+        "Seja 1% melhor a cada novo dia.",
+        "Vencer a si mesmo é o maior dos desafios de um Agente.", 
+        "Grandes batalhas só são dadas a grandes guerreiros.",
+        "A disciplina é a ponte indestrutível entre metas e realizações.", 
+        "O que você faz agora define o seu futuro na Polícia.",
+        "Não espere pela motivação, construa a sua disciplina.", 
+        "Foque no processo, o resultado é uma consequência inevitável.",
+        "Sua única competição real é com quem você foi ontem.", 
+        "Cada pequeno passo te deixa mais perto da sua vaga.",
+        "A dor do estudo é temporária, mas o cargo é vitalício.", 
+        "Mantenha o foco absoluto na missão e a fé no resultado.",
+        "Agente: sua rotina diária é o seu maior treinamento.", 
+        "Troque o 'não consigo' pelo 'vou aprender como fazer'.",
+        "Estude enquanto eles dormem para viver o que eles sonham.", 
+        "A aprovação é o destino, a persistência é o combustível.",
+        "Seja muito mais forte do que a sua melhor desculpa.", 
+        "Missão dada é missão cumprida. Sem recuar."
+    ];
+
+    // 3. Estado Global da Aplicação
+    let loginMode = true; // Alterna entre entrar e cadastrar
+    let localData = { todos: [], percent: 0 }; // Guarda as tarefas localmente
+    const dateToday = new Date(); // Pega a data atual
+    
+    // Formatação da Data (Padrão: Quinta-feira, 29 de Janeiro)
+    const optionsDate = { weekday: 'long', day: 'numeric', month: 'long' };
+    const displayDateStr = dateToday.toLocaleDateString('pt-BR', optionsDate);
+    const dbKeyDate = dateToday.toLocaleDateString('pt-BR'); // Chave de busca no banco (DD/MM/AAAA)
+
+    // 4. Funções de Autenticação (Segurança)
+    function toggleAuthMode() {
+        loginMode = !loginMode;
+        document.getElementById('auth-label').innerText = loginMode ? "Portaria Alvorada" : "Recrutamento Alvorada";
+        document.getElementById('btn-auth-action').innerText = loginMode ? "ENTRAR NO SISTEMA" : "CRIAR MINHA CONTA";
+        document.getElementById('auth-switch').innerText = loginMode ? "Não é cadastrado? Criar Conta" : "Já é Agente? Fazer Login";
+    }
+
+    function handleAuth() {
+        const user = document.getElementById('user-name').value.trim(); // Pega o nome e limpa espaços
+        const pass = document.getElementById('user-pass').value; // Pega a senha
+        const errorField = document.getElementById('auth-error-msg');
+        
+        if(!user || !pass) { errorField.innerText = "Preencha todos os campos."; return; }
+
+        // Sanitização: nome vira um e-mail fake para o Firebase (ex: agente_x@alvorada.com)
+        const email = `${user.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s/g, "")}@alvorada.com`;
+        
+        const action = loginMode 
+            ? firebase.auth().signInWithEmailAndPassword(email, pass) // Comando de login
+            : firebase.auth().createUserWithEmailAndPassword(email, pass); // Comando de cadastro
+
+        action.catch(err => { 
+            let msg = "Falha no sistema.";
+            if(err.code === "auth/wrong-password") msg = "Senha incorreta para este Agente.";
+            if(err.code === "auth/user-not-found") msg = "Agente não cadastrado.";
+            errorField.innerText = msg;
+        });
+    }
+
+    // Monitora o estado de login (Se logar, abre o app; se deslogar, abre o login)
+    firebase.auth().onAuthStateChanged(user => {
+        if(user) {
+            document.getElementById('auth-overlay').classList.add('auth-hidden'); // Esconde tela de login
+            syncData(); // Puxa dados das missões
+            refreshQuote(); // Mostra uma frase nova
+        } else {
+            document.getElementById('auth-overlay').classList.remove('auth-hidden'); // Mostra tela de login
+        }
+    });
+
+    // 5. Motor de Dados (Sincronização Nuvem/Local)
+    async function syncData() {
+        const user = firebase.auth().currentUser;
+        if(!user) return;
+        
+        const doc = await db.collection("usuarios").doc(user.uid).collection("dias").doc(dbKeyDate).get();
+        if(doc.exists) {
+            localData = doc.data(); // Se já usou o app hoje, pega o progresso atual
+        } else {
+            // Se for a primeira vez no dia, tenta herdar as missões de ontem (sem as marcações)
+            const lastLog = await db.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
+            if(!lastLog.empty) {
+                localData.todos = lastLog.docs[0].data().todos.map(t => ({...t, completed: false, id: Date.now().toString() + Math.random()}));
+            }
+        }
+        renderUI(); // Desenha na tela
+        updateStreak(user.uid); // Atualiza o contador de sucessos
+    }
+
+    function renderUI() {
+        const listContainer = document.getElementById('todo-list');
+        const circlesContainer = document.getElementById('circles-grid');
+        listContainer.innerHTML = ''; circlesContainer.innerHTML = '';
+        let totalDone = 0;
+
+        localData.todos.forEach((item, i) => {
+            // Desenha o item na lista de tarefas
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.innerHTML = `
+                <input type="checkbox" ${item.completed ? 'checked' : ''} onchange="toggleMission('${item.id}')">
+                <span style="${item.completed ? 'text-decoration:line-through; opacity:0.3' : ''}">${item.text}</span>
+                <button class="delete-icon" onclick="removeMission('${item.id}')">🗑️</button>
+            `;
+            listContainer.appendChild(li);
+            if(item.completed) totalDone++;
+
+            // Desenha os círculos numerados (limite de 8 conforme imagem)
+            if(i < 8) {
+                const circle = document.createElement('div');
+                circle.className = `status-circle ${item.completed ? 'active' : ''}`;
+                circle.innerText = i + 1;
+                circlesContainer.appendChild(circle);
+            }
+        });
+
+        // Calcula porcentagem e dispara confetes se bater 100%
+        const perc = localData.todos.length > 0 ? Math.round((totalDone / localData.todos.length) * 100) : 0;
+        if(perc === 100 && localData.percent < 100) confetti({ particleCount: 200, spread: 80, origin: { y: 0.7 } });
+        
+        localData.percent = perc;
+        document.getElementById('progress-bar').style.width = perc + '%';
+        document.getElementById('stats-label').innerText = `Total: ${perc}%`;
+        
+        persistData(); // Salva as mudanças na nuvem
+    }
+
+    function persistData() {
+        const user = firebase.auth().currentUser;
+        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(dbKeyDate).set(localData);
+    }
+
+    // 6. Manipulação de Missões
+    function addMission() {
+        const input = document.getElementById('mission-input');
+        if(!input.value) return;
+        // PACTO: Criando ID Único por Timestamp + Random para evitar colisões
+        localData.todos.push({ id: Date.now().toString() + Math.random(), text: input.value, completed: false });
+        input.value = '';
+        renderUI();
+    }
+
+    function toggleMission(id) {
+        const task = localData.todos.find(t => t.id === id);
+        if(task) task.completed = !task.completed;
+        renderUI();
+    }
+
+    function removeMission(id) {
+        localData.todos = localData.todos.filter(t => t.id !== id);
+        renderUI();
+    }
+
+    // 7. Funções Utilitárias (Relatório, DarkMode, FullScreen)
+    function generateTicket() {
+        const ticket = document.createElement('div');
+        ticket.style.cssText = "width: 80mm; padding: 25px; font-family: 'Courier New', monospace; color: black; background: white;";
+        
+        let missionRows = localData.todos.map(t => `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 7px 0; font-size: 13px;">
+                <span style="max-width: 170px;">${t.text.toUpperCase()}</span>
+                <span style="font-weight: bold;">${t.completed ? 'OK' : '--'}</span>
+            </div>
+        `).join('');
+
+        ticket.innerHTML = `
+            <div style="text-align:center; border-bottom: 2.5px solid #000; padding-bottom: 12px; margin-bottom: 15px;">
+                <h2 style="margin:0;">ALVORADA TÁTICO</h2>
+                <p style="margin:6px 0; font-size:14px;">RELATÓRIO DE MISSÕES</p>
+                <small>${displayDateStr.toUpperCase()}</small>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <div style="display:flex; justify-content:space-between; font-weight:bold; border-bottom:1.5px solid #000; margin-bottom:5px;">
+                    <span>MISSÃO</span>
+                    <span>STATUS</span>
+                </div>
+                ${missionRows}
+            </div>
+            <div style="text-align:right; font-weight:bold; border-top: 2.5px solid #000; padding-top:12px; font-size: 1.3rem;">
+                APROVEITAMENTO: ${localData.percent}%
+            </div>
+            <div style="text-align:center; margin-top:35px; border-top: 1px dashed #000; padding-top: 12px; font-size: 11px;">
+                *** DOCUMENTO DO AGENTE ***<br>MANTENHA O FOCO NO CARGO
+            </div>
+        `;
+
+        const config = { margin: 8, filename: `Ticket_Alvorada_${dbKeyDate}.pdf`, jsPDF: { unit: 'mm', format: [80, 150] } };
+        html2pdf().set(config).from(ticket).save();
+    }
+
+    function refreshQuote() {
+        document.getElementById('quote-display').innerText = `"${tacticalQuotes[Math.floor(Math.random()*tacticalQuotes.length)]}"`;
+    }
+
+    async function updateStreak(uid) {
+        const snap = await db.collection("usuarios").doc(uid).collection("dias").where("percent", "==", 100).get();
+        document.getElementById('streak-display').innerText = `🔥 ${snap.size}`;
+    }
+
+    function toggleDarkMode() {
+        const currentFilter = document.body.style.filter;
+        document.body.style.filter = currentFilter === 'invert(1)' ? 'invert(0)' : 'invert(1)';
+        document.body.style.backgroundColor = currentFilter === 'invert(1)' ? '#1a1c24' : '#e5e3db';
+    }
+
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e => console.log(e));
+        else document.exitFullscreen();
+    }
+
+    // Inicialização da Data na Tela
+    document.getElementById('date-box').innerText = displayDateStr;
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-br">
+<head>
     <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover"> <title>Alvorada</title>
     
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
@@ -241,3 +598,4 @@
 </script>
 </body>
 </html>
+
