@@ -46,9 +46,8 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg-color); z-index: 9999;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.8s ease, visibility 0.8s;
         }
-        .auth-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .auth-hidden { opacity: 0; visibility: hidden; pointer-events: none; transition: 0.8s; }
 
         .container {
             width: 100%; max-width: 450px;
@@ -57,19 +56,11 @@
             margin-top: 20px; position: relative; box-sizing: border-box;
         }
 
-        header { margin-bottom: 35px; }
-        h1 { font-family: 'Comfortaa', cursive; font-size: 1.5rem; margin: 0; color: var(--title-brown); }
-        #current-date { font-size: 0.85rem; color: var(--date-color); font-weight: 600; text-transform: capitalize; margin-top: 8px; display: block; }
-        
-        .progress-container { background: var(--bar-bg); border-radius: 20px; height: 14px; margin-bottom: 10px; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: width 0.8s ease; }
-        .stats-text { font-size: 0.9rem; text-align: right; margin-bottom: 25px; font-weight: 700; color: var(--stats-green); }
-
         .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
-        input[type="text"], input[type="email"], input[type="password"] { 
+        input[type="text"], input[type="password"] { 
             flex: 1; padding: 12px; border: 2px solid var(--input-border); 
             background: var(--card-bg); color: var(--text-color); 
-            border-radius: 12px; outline: none; font-family: inherit; font-size: 16px !important;
+            border-radius: 12px; outline: none; font-size: 16px !important;
         }
 
         .todo-item { 
@@ -77,74 +68,48 @@
             padding: 12px 15px; border-radius: 15px; display: flex; 
             align-items: center; margin-bottom: 12px; 
         }
-        .todo-item.completed { background-color: var(--item-done-bg); }
-
-        .auth-toggle-link { margin-top: 15px; font-size: 0.85rem; color: var(--title-brown); cursor: pointer; text-decoration: underline; font-weight: 600; }
-
-        #custom-confirm {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--card-bg); border: 2px solid var(--title-brown); padding: 25px;
-            border-radius: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); z-index: 2000;
-            width: 280px; text-align: center;
-        }
-
+        
         /* Lixeira do lado direito conforme solicitado */
         .delete-btn { background: none; border: none; cursor: pointer; opacity: 0.5; margin-left: auto; }
-
-        .theme-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--title-brown); border: none; cursor: pointer; color: white; z-index: 999; }
+        .theme-toggle { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--title-brown); border: none; cursor: pointer; color: white; }
     </style>
 </head>
-<body ondblclick="toggleFullScreen()">
+<body>
 
 <div id="auth-container">
     <div class="container" style="text-align: center;">
         <h1 id="auth-title" style="margin-bottom: 20px;">Portaria Alvorada</h1>
-        <input type="email" id="auth-email" placeholder="E-mail do Agente" style="width: 100%; margin-bottom: 10px; box-sizing: border-box;">
+        <input type="text" id="auth-login" placeholder="Nome de Usuário" style="width: 100%; margin-bottom: 10px; box-sizing: border-box;">
         <input type="password" id="auth-password" placeholder="Senha" style="width: 100%; margin-bottom: 20px; box-sizing: border-box;">
-        
         <button onclick="handleAuth()" id="auth-btn" style="width:100%; padding:15px; background:var(--title-brown); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer;">ACESSAR SISTEMA</button>
-        
-        <p id="auth-toggle-text" class="auth-toggle-link" onclick="toggleAuthMode()">Não tem conta? Cadastre-se aqui</p>
+        <p id="auth-toggle-text" class="auth-toggle-link" style="cursor:pointer; margin-top:15px; font-size:0.8rem;" onclick="toggleAuthMode()">Não tem conta? Cadastre-se</p>
         <p id="auth-error" style="color:var(--delete-red); font-size:0.8rem; margin-top:15px; min-height: 1.2em;"></p>
     </div>
 </div>
 
-<div id="custom-confirm">
-    <p id="confirm-msg" style="font-weight: 600;"></p>
-    <div style="display: flex; justify-content: space-around; margin-top: 20px;">
-        <button style="padding: 8px 20px; border-radius: 10px; border: none;" onclick="closeConfirm(false)">Cancelar</button>
-        <button style="padding: 8px 20px; border-radius: 10px; border: none; background: var(--delete-red); color: white;" onclick="closeConfirm(true)">Excluir</button>
-    </div>
-</div>
-
-<div class="container" id="main-app-container">
-    <header>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>Alvorada</h1>
-            <div id="streak-display" style="font-weight: 700; color: #ff9f43;">🔥 0 dias</div>
-        </div>
-        <span id="current-date">Carregando...</span>
+<div class="container" id="main-app">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="color: var(--title-brown);">Alvorada</h1>
+        <div id="streak-display">🔥 0 dias</div>
     </header>
-
-    <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
-    <div id="stats" class="stats-text">TOTAL: 0%</div>
+    <div id="current-date" style="margin-bottom: 20px; font-size: 0.9rem; color: var(--date-color);"></div>
+    
+    <div class="progress-container" style="background:var(--bar-bg); height:10px; border-radius:10px; margin-bottom:10px;">
+        <div id="progress-bar" style="background:var(--bar-1); height:100%; width:0%; border-radius:10px; transition: 0.5s;"></div>
+    </div>
+    <div id="stats" style="text-align:right; font-weight:bold; margin-bottom:20px;">0%</div>
 
     <div class="input-group">
-        <input type="text" id="todo-input" placeholder="Nova missão de hoje...">
-        <button onclick="addTodo()" style="background:var(--add-red); border:none; padding:0 18px; border-radius:12px; color:white; font-weight:bold; font-size:1.5rem; cursor:pointer;">+</button>
+        <input type="text" id="todo-input" placeholder="Nova missão...">
+        <button onclick="addTodo()" style="background:var(--add-red); color:white; border:none; padding:10px 20px; border-radius:12px; font-weight:bold;">+</button>
     </div>
-
-    <ul id="todo-list" style="list-style: none; padding: 0; margin-bottom: 30px;"></ul>
-    
-    <div style="text-align: center;">
-        <button onclick="firebase.auth().signOut()" style="background:none; border:none; color:var(--date-color); font-size:0.7rem; cursor:pointer; text-decoration:underline;">Sair do Sistema</button>
-    </div>
+    <ul id="todo-list" style="padding:0; list-style:none;"></ul>
+    <center><button onclick="firebase.auth().signOut()" style="background:none; border:none; text-decoration:underline; font-size:0.7rem; color:gray; cursor:pointer;">Sair</button></center>
 </div>
 
 <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
 
 <script>
-    // CONFIGURAÇÃO FIREBASE INTEGRADA
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -155,27 +120,31 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbFirestore = firebase.firestore();
+    const db = firebase.firestore();
+    let isLoginMode = true;
     const todayStr = new Date().toLocaleDateString('pt-BR');
     let dbLocal = { todos: [], percent: 0 };
-    let isLoginMode = true;
-    let confirmCallback = null;
 
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
         document.getElementById('auth-title').innerText = isLoginMode ? "Portaria Alvorada" : "Recrutamento Alvorada";
         document.getElementById('auth-btn').innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
-        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Não tem conta? Cadastre-se aqui" : "Já é um Agente? Faça Login";
-        document.getElementById('auth-error').innerText = "";
+        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Não tem conta? Cadastre-se" : "Já é um Agente? Faça Login";
     }
 
     function handleAuth() {
-        const email = document.getElementById('auth-email').value;
+        const loginRaw = document.getElementById('auth-login').value.trim();
         const password = document.getElementById('auth-password').value;
         const btn = document.getElementById('auth-btn');
         const errorMsg = document.getElementById('auth-error');
         
-        if(!email || !password) { errorMsg.innerText = "⚠ Preencha todos os campos."; return; }
+        if(!loginRaw || !password) { errorMsg.innerText = "⚠ Preencha login e senha."; return; }
+        if(loginRaw.includes(" ")) { errorMsg.innerText = "❌ Login não pode ter espaços."; return; }
+
+        // Sanitização: transforma "Carina Silva" em "carinasilva@alvorada.com"
+        const safeLogin = loginRaw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const email = `${safeLogin}@alvorada.com`;
+        
         btn.innerText = "PROCESSANDO...";
         
         const action = isLoginMode 
@@ -185,119 +154,89 @@
         action.catch(err => {
             btn.innerText = isLoginMode ? "ACESSAR SISTEMA" : "CRIAR MINHA CONTA";
             switch (err.code) {
+                case 'auth/invalid-email': errorMsg.innerText = "❌ Nome de usuário inválido."; break;
+                case 'auth/weak-password': errorMsg.innerText = "❌ A senha deve ter no mínimo 6 dígitos."; break;
+                case 'auth/user-not-found': errorMsg.innerText = "❌ Login não encontrado."; break;
                 case 'auth/wrong-password': errorMsg.innerText = "❌ Senha incorreta."; break;
-                case 'auth/user-not-found': errorMsg.innerText = "❌ Usuário não encontrado."; break;
-                case 'auth/weak-password': errorMsg.innerText = "❌ Senha fraca (mín. 6 caracteres)."; break;
-                case 'auth/email-already-in-use': errorMsg.innerText = "❌ Este e-mail já está em uso."; break;
+                case 'auth/email-already-in-use': errorMsg.innerText = "❌ Este login já existe."; break;
                 default: errorMsg.innerText = "❌ Erro: " + err.message;
             }
         });
     }
 
     firebase.auth().onAuthStateChanged(user => {
-        const container = document.getElementById('auth-container');
-        if (user) {
-            container.classList.add('auth-hidden');
-            syncFirestore();
+        if(user) {
+            document.getElementById('auth-container').classList.add('auth-hidden');
+            loadData();
         } else {
-            container.classList.remove('auth-hidden');
+            document.getElementById('auth-container').classList.remove('auth-hidden');
         }
     });
 
-    async function syncFirestore() {
+    async function loadData() {
         const user = firebase.auth().currentUser;
         if(!user) return;
-        const docRef = dbFirestore.collection("usuarios").doc(user.uid).collection("dias").doc(todayStr);
-        const docSnap = await docRef.get();
-
-        if (docSnap.exists()) {
-            dbLocal = docSnap.data();
-        } else {
-            const lastDay = await dbFirestore.collection("usuarios").doc(user.uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
-            if (!lastDay.empty) {
-                const data = lastDay.docs[0].data();
-                dbLocal = { todos: data.todos.map(t => ({...t, completed: false})), percent: 0 };
-            }
+        const doc = await db.collection("usuarios").doc(user.uid).collection("dias").doc(todayStr).get();
+        if(doc.exists) {
+            dbLocal = doc.data();
         }
         updateUI();
-        updateTotalStreak();
     }
 
     function updateUI() {
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
-        let completed = 0;
-        
-        dbLocal.todos.forEach((todo, index) => {
+        let done = 0;
+        dbLocal.todos.forEach(t => {
             const li = document.createElement('li');
-            li.className = 'todo-item ' + (todo.completed ? 'completed' : '');
+            li.className = 'todo-item';
             li.innerHTML = `
-                <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleTodo(${index})" style="margin-right:12px; width:20px; height:20px;">
-                <span style="flex:1; font-size:0.95rem; ${todo.completed ? 'text-decoration:line-through; opacity:0.6' : ''}">${todo.text}</span>
-                <button onclick="deleteTodo(${index})" class="delete-btn">🗑️</button>
+                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo('${t.id}')">
+                <span style="margin-left:10px; flex:1; ${t.completed ? 'text-decoration:line-through; opacity:0.5' : ''}">${t.text}</span>
+                <button class="delete-btn" onclick="deleteTodo('${t.id}')">🗑️</button>
             `;
             list.appendChild(li);
-            if (todo.completed) completed++;
+            if(t.completed) done++;
         });
-
-        const percent = dbLocal.todos.length > 0 ? Math.round((completed / dbLocal.todos.length) * 100) : 0;
-        if (percent === 100 && dbLocal.percent < 100) confetti({ particleCount: 150, spread: 70 });
-        
-        dbLocal.percent = percent;
-        document.getElementById('progress-bar').style.width = percent + '%';
-        document.getElementById('stats').innerText = `TOTAL: ${percent}%`;
+        const p = dbLocal.todos.length > 0 ? Math.round((done/dbLocal.todos.length)*100) : 0;
+        document.getElementById('progress-bar').style.width = p + '%';
+        document.getElementById('stats').innerText = p + '%';
+        dbLocal.percent = p;
         saveData();
-    }
-
-    async function updateTotalStreak() {
-        const user = firebase.auth().currentUser;
-        if(!user) return;
-        const days = await dbFirestore.collection("usuarios").doc(user.uid).collection("dias").where("percent", "==", 100).get();
-        document.getElementById('streak-display').innerText = `🔥 ${days.size} dias`;
     }
 
     function saveData() {
         const user = firebase.auth().currentUser;
-        if (user) dbFirestore.collection("usuarios").doc(user.uid).collection("dias").doc(todayStr).set(dbLocal);
+        if(user) db.collection("usuarios").doc(user.uid).collection("dias").doc(todayStr).set(dbLocal);
     }
 
-    function toggleTodo(i) { dbLocal.todos[i].completed = !dbLocal.todos[i].completed; updateUI(); }
     function addTodo() {
-        const input = document.getElementById('todo-input');
-        if (input.value) { dbLocal.todos.push({text: input.value, completed: false}); updateUI(); }
-        input.value = '';
+        const text = document.getElementById('todo-input').value;
+        if(!text) return;
+        // PACTO: DEFININDO O ID ÚNICO
+        dbLocal.todos.push({ id: Date.now().toString(), text: text, completed: false });
+        document.getElementById('todo-input').value = '';
+        updateUI();
     }
 
-    function deleteTodo(i) {
-        showConfirm("Remover esta missão?", (ok) => {
-            if(ok) { dbLocal.todos.splice(i, 1); updateUI(); }
-        });
+    function toggleTodo(id) {
+        const t = dbLocal.todos.find(x => x.id === id);
+        if(t) t.completed = !t.completed;
+        updateUI();
     }
 
-    function showConfirm(msg, callback) {
-        document.getElementById('confirm-msg').innerText = msg;
-        document.getElementById('custom-confirm').style.display = 'block';
-        confirmCallback = callback;
-    }
-
-    function closeConfirm(res) {
-        document.getElementById('custom-confirm').style.display = 'none';
-        if (confirmCallback) confirmCallback(res);
-    }
-
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else if (document.exitFullscreen) document.exitFullscreen();
+    function deleteTodo(id) {
+        dbLocal.todos = dbLocal.todos.filter(x => x.id !== id);
+        updateUI();
     }
 
     function toggleTheme() {
         const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        document.getElementById('theme-btn').innerText = theme === 'light' ? '🌙' : '☀️';
+        document.getElementById('theme-btn').innerText = theme === 'dark' ? '☀️' : '🌙';
     }
 
-    document.getElementById('current-date').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+    document.getElementById('current-date').innerText = todayStr;
 </script>
 </body>
 </html>
