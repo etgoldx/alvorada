@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
     <title>Alvorada - 1% todo dia</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
@@ -16,7 +15,7 @@
     <style>
         :root {
             --bg-color: #fdfaf6; --card-bg: #ffffff; --title-brown: #a68966;
-            --add-red: #f28482; --check-green: #32cd32; --item-done-bg: #e8f5e9;
+            --add-red: #f28482; --check-green: #b9fbc0; --item-done-bg: #f8fcf8;
             --stats-green: #7ebc89; --bar-bg: rgba(0,0,0,0.05);
             --bar-1: #a8dadc; --bar-2: #ffcad4; --bar-3: #b9fbc0;
             --text-color: #5d5d5d; --date-color: #999;
@@ -26,77 +25,92 @@
         [data-theme="dark"] {
             --bg-color: #1a1c22; --card-bg: #2d3039; --text-color: #e0e0e0;
             --input-border: #3d414d; --title-brown: #c5b299;
-            --bar-bg: rgba(255,255,255,0.15); --item-done-bg: #1b3d2f;
+            --bar-bg: rgba(255,255,255,0.1); --item-done-bg: #243a31;
         }
 
         body {
             font-family: 'Quicksand', sans-serif; background-color: var(--bg-color); color: var(--text-color);
             margin: 0; padding: env(safe-area-inset-top) 20px 100px 20px;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            transition: all 0.4s ease;
+            transition: background 0.4s ease;
         }
 
-        .container {
-            width: 100%; max-width: 450px; background: var(--card-bg); padding: 30px;
-            border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            margin-top: 20px; box-sizing: border-box;
+        /* Dimensionamento Excelente: Board Único */
+        .board {
+            width: 100%; max-width: 450px; background: var(--card-bg); 
+            padding: 35px 25px; border-radius: 40px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+            margin-top: 30px; box-sizing: border-box;
+            position: relative;
         }
 
-        /* Título Esquerda, Contagem Direita */
-        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-        h1 { font-family: 'Comfortaa', cursive; font-size: 1.5rem; margin: 0; color: var(--title-brown); }
-        #current-date { font-size: 0.8rem; color: var(--date-color); text-transform: capitalize; }
-        .streak-badge { font-weight: 700; color: #ff9f43; }
+        /* Cabeçalho */
+        header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
+        h1 { font-family: 'Comfortaa', cursive; font-size: 1.7rem; margin: 0; color: var(--title-brown); }
+        #current-date { font-size: 0.85rem; color: var(--date-color); text-transform: capitalize; margin-top: 5px; }
+        .streak-badge { font-weight: 800; color: #ff9f43; font-size: 1.1rem; }
 
-        /* Barra de Progresso */
-        .progress-container { background: var(--bar-bg); border-radius: 20px; height: 14px; margin: 20px 0 5px; overflow: hidden; }
-        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 0.8s; }
-        .stats-text { font-size: 0.9rem; text-align: right; margin-bottom: 25px; font-weight: 700; color: var(--stats-green); }
+        /* Progresso */
+        .progress-container { background: var(--bar-bg); border-radius: 20px; height: 12px; margin: 25px 0 8px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--bar-1), var(--bar-2), var(--bar-3)); transition: 1s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        .stats-text { font-size: 0.85rem; text-align: right; margin-bottom: 30px; font-weight: 700; color: var(--stats-green); }
 
-        /* Input e Botões */
-        .input-group { display: flex; gap: 10px; margin-bottom: 25px; }
-        input[type="text"] { flex: 1; padding: 12px; border: 2px solid var(--input-border); background: var(--card-bg); color: var(--text-color); border-radius: 12px; outline: none; font-size: 16px; }
-        .add-btn { background-color: var(--add-red); border: none; padding: 0 18px; border-radius: 12px; cursor: pointer; color: white; font-size: 1.5rem; }
+        /* Input Group */
+        .input-group { display: flex; gap: 12px; margin-bottom: 30px; }
+        input[type="text"] { flex: 1; padding: 16px; border: 2px solid var(--input-border); background: transparent; color: var(--text-color); border-radius: 18px; outline: none; font-size: 16px; }
+        .add-btn { background-color: var(--add-red); border: none; width: 55px; border-radius: 18px; cursor: pointer; color: white; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+        .add-btn:active { transform: scale(0.9); }
 
-        /* Lista de Tarefas */
+        /* Tarefas */
         .todo-list { list-style: none; padding: 0; margin: 0; }
         .todo-item { 
-            background: var(--card-bg); border: 1px solid var(--input-border); padding: 12px 15px; 
-            border-radius: 15px; display: flex; align-items: center; margin-bottom: 10px; gap: 10px;
+            display: flex; align-items: center; padding: 15px; background: rgba(0,0,0,0.02);
+            border-radius: 20px; margin-bottom: 12px; gap: 12px; border: 1px solid var(--input-border);
         }
-        .todo-item.completed { background-color: var(--item-done-bg); }
-        .todo-text { flex: 1; font-size: 0.95rem; }
-        .delete-icon { cursor: pointer; opacity: 0.5; transition: 0.3s; }
-        .delete-icon:hover { opacity: 1; color: var(--delete-red); }
+        .todo-item.completed { background-color: var(--item-done-bg); opacity: 0.8; }
+        input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--stats-green); cursor: pointer; }
+        .todo-text { flex: 1; font-weight: 500; font-size: 0.95rem; }
+        .delete-btn { background: none; border: none; cursor: pointer; font-size: 1.1rem; filter: grayscale(1); opacity: 0.4; transition: 0.3s; }
+        .delete-btn:hover { opacity: 1; filter: grayscale(0); }
 
-        /* Grade de Dias */
-        .history-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 30px; max-width: 450px; }
-        .day-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--input-border); background: none; color: var(--date-color); cursor: pointer; font-weight: bold; }
-        .day-dot.full { border-color: var(--stats-green); color: var(--stats-green); }
+        /* Frases Motivacionais */
+        #motivation-quote { text-align: center; font-size: 0.85rem; margin-top: 30px; line-height: 1.5; color: var(--date-color); font-style: italic; min-height: 40px; }
 
-        /* Botão Flutuante DarkLight (Imune ao Zoom) */
-        .theme-toggle { position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; border-radius: 50%; background: var(--title-brown); border: none; cursor: pointer; color: white; font-size: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 9999; }
+        /* Bolinhas de Histórico (Dias) */
+        .history-grid { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--input-border); }
+        .day-dot { 
+            width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--input-border); 
+            background: none; color: var(--date-color); cursor: pointer; font-size: 0.75rem; 
+            font-weight: 700; transition: 0.3s; position: relative;
+        }
+        .day-dot.completed { border-color: var(--stats-green); color: var(--stats-green); }
+        .day-dot:hover::after {
+            content: attr(data-summary); position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
+            background: var(--title-brown); color: white; padding: 8px 12px; border-radius: 10px;
+            font-size: 0.7rem; white-space: nowrap; z-index: 10; pointer-events: none;
+        }
 
-        /* Estilo PDF Ticket */
-        .ticket-receipt { font-family: 'Courier Prime', monospace; width: 80mm; padding: 10px; color: black; background: white; }
+        /* Botões Flutuantes (Direita) */
+        .fab-container { position: fixed; bottom: 30px; right: 25px; display: flex; flex-direction: column; gap: 15px; z-index: 1000; }
+        .fab { width: 60px; height: 60px; border-radius: 50%; border: none; background: var(--title-brown); color: white; cursor: pointer; font-size: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; }
 
-        /* Login Screen */
-        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+        /* Auth Screen */
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body ondblclick="toggleFullScreen()">
 
 <div id="auth-screen">
-    <div class="container" style="text-align: center;">
-        <h1 style="margin-bottom: 30px;">Agente Alvorada</h1>
-        <input type="text" id="auth-user" class="todo-text" style="width:100%; padding:15px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px;" placeholder="Usuário">
-        <input type="password" id="auth-pass" style="width:100%; padding:15px; margin-bottom:20px; border:1px solid #ddd; border-radius:10px;" placeholder="Senha">
-        <button onclick="handleAuth()" style="width:100%; padding:15px; background:var(--title-brown); color:white; border:none; border-radius:10px; font-weight:bold;">ENTRAR / CADASTRAR</button>
+    <div class="board" style="text-align: center; margin-top: 0;">
+        <h1 style="margin-bottom: 35px;">Agente Alvorada</h1>
+        <input type="text" id="auth-user" placeholder="Codinome do Agente" style="width:100%; margin-bottom:12px; box-sizing: border-box;" class="auth-input">
+        <input type="password" id="auth-pass" placeholder="Senha de Acesso" style="width:100%; margin-bottom:25px; box-sizing: border-box;" class="auth-input">
+        <button onclick="handleAuth()" style="width:100%; padding:18px; background:var(--title-brown); color:white; border:none; border-radius:18px; font-weight:bold; cursor:pointer;">ACESSAR PAINEL</button>
     </div>
 </div>
 
-<div class="container" id="main-app">
+<div class="board" id="main-app">
     <header>
         <div>
             <h1>Alvorada</h1> <div id="current-date"></div> </div>
@@ -106,22 +120,19 @@
         <div id="progress-bar" class="progress-bar"></div>
     </div>
     <div id="stats" class="stats-text">TOTAL: 0%</div> <div class="input-group">
-        <input type="text" id="todo-input" placeholder="Nova missão de hoje...">
-        <button class="add-btn" onclick="addTodo()">+</button> </div>
+        <input type="text" id="todo-input" placeholder="Nova missão tática...">
+        <button class="add-btn" onclick="addTodo()">+</button>
+    </div>
 
-    <ul id="todo-list" class="todo-list"></ul> <div id="motivation-quote" style="text-align:center; font-size:0.85rem; margin-top:25px; font-style:italic; opacity:0.8;"></div>
-
-    <button style="margin-top:30px; width:100%; padding:12px; border-radius:15px; border:2px solid var(--title-brown); background:none; color:var(--title-brown); font-weight:bold; cursor:pointer;" onclick="generateTicketPDF()">
-        📄 GERAR RELATÓRIO (TICKET)
-    </button>
+    <ul id="todo-list" class="todo-list"></ul> <div id="motivation-quote"></div> <div class="history-grid" id="history-grid"></div>
 </div>
 
-<div class="history-grid" id="history-grid"></div>
-
-<button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙</button>
+<div class="fab-container">
+    <button class="fab" id="theme-btn" onclick="toggleTheme()">🌙</button> <button class="fab" onclick="firebase.auth().signOut()">🚪</button>
+</div>
 
 <script>
-    // 1. Configuração do Firebase (Ajustada para o seu projeto)
+    // 1. Configurações Firebase Studio
     const firebaseConfig = {
       apiKey: "AIzaSyAavmFHrcPo8OY60hnLo2dK4BsylPKvPAQ",
       authDomain: "alvorada-23e01.firebaseapp.com",
@@ -134,23 +145,23 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    const todayStr = new Date().toLocaleDateString('pt-BR');
+    const todayID = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
     let agentData = { todos: [], percent: 0 };
 
-    // 2. Frases Motivacionais (Mínimo 20)
-    const quotes = [
-        "A constância é a mãe da aprovação.", "1% melhor a cada novo dia.", "Vencer a si mesmo é a maior das vitórias.",
+    // 2. Frases Motivacionais (Protocolo Alvorada)
+    const missionQuotes = [
+        "A constância é a mãe da aprovação.", "1% melhor a cada novo dia.", "Não pare até se orgulhar.",
+        "A disciplina é a ponte entre metas e realizações.", "Vencer a si mesmo é a maior das vitórias.",
         "Mantenha o foco na missão, o cargo virá.", "Seu esforço de hoje é o seu distintivo de amanhã.",
         "Estude enquanto eles dormem.", "A vaga é sua por mérito e suor.", "Fé na missão, Agente!",
         "A dor do estudo é temporária, o cargo é vitalício.", "Nada vence a persistência inabalável.",
         "Sua única competição é com quem você foi ontem.", "Aprovação exige sacrifício e estratégia.",
         "Seja mais forte que sua melhor desculpa.", "Transforme suor em sucesso tático.",
         "Missão dada é missão cumprida.", "Paciência e resiliência no caminho.",
-        "O sucesso é o acúmulo de pequenos acertos diários.", "Agente: sua rotina é seu maior treinamento.",
-        "O estudo é a arma para mudar seu futuro.", "A farda custa caro, mas o preço vale a pena."
+        "O sucesso é o acúmulo de pequenos acertos diários.", "Agente: sua rotina é seu maior treinamento."
     ];
 
-    // 3. Autenticação
+    // 3. Segurança e Login
     function handleAuth() {
         const user = document.getElementById('auth-user').value.trim();
         const pass = document.getElementById('auth-pass').value;
@@ -158,37 +169,37 @@
         
         auth.signInWithEmailAndPassword(email, pass)
             .catch(() => auth.createUserWithEmailAndPassword(email, pass))
-            .catch(err => alert("Erro: " + err.message));
+            .catch(err => alert("Erro na Base: " + err.message));
     }
 
     auth.onAuthStateChanged(user => {
         if(user) {
             document.getElementById('auth-screen').classList.add('hidden');
-            initApp();
+            loadAgentData();
         } else {
             document.getElementById('auth-screen').classList.remove('hidden');
         }
     });
 
-    // 4. Lógica Principal
-    async function initApp() {
+    // 4. Lógica de Dados (Persistência X para Y)
+    async function loadAgentData() {
         const uid = auth.currentUser.uid;
-        const doc = await db.collection("usuarios").doc(uid).collection("dias").doc(todayStr.replace(/\//g, '-')).get();
+        const doc = await db.collection("usuarios").doc(uid).collection("dias").doc(todayID).get();
         
         if(doc.exists) {
             agentData = doc.data();
         } else {
-            // PACTO: Tarefas do dia X mantidas para o dia Y
+            // Se for um novo dia, mantém as tarefas mas reseta o check
             const last = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(1).get();
             if(!last.empty) agentData.todos = last.docs[0].data().todos.map(t => ({...t, completed: false}));
         }
         
-        document.getElementById('motivation-quote').innerText = `"${quotes[Math.floor(Math.random()*quotes.length)]}"`;
-        updateUI();
-        loadHistory();
+        document.getElementById('motivation-quote').innerText = `"${missionQuotes[Math.floor(Math.random()*missionQuotes.length)]}"`;
+        updateBoard();
+        updateHistory(uid);
     }
 
-    function updateUI() {
+    function updateBoard() {
         const list = document.getElementById('todo-list');
         list.innerHTML = '';
         let done = 0;
@@ -197,9 +208,9 @@
             const li = document.createElement('li');
             li.className = `todo-item ${t.completed ? 'completed' : ''}`;
             li.innerHTML = `
-                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTodo(${i})">
+                <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${i})">
                 <span class="todo-text">${t.text}</span>
-                <span class="delete-icon" onclick="deleteTodo(${i})">🗑️</span>
+                <button class="delete-btn" onclick="deleteTask(${i})">🗑️</button>
             `;
             list.appendChild(li);
             if(t.completed) done++;
@@ -212,83 +223,57 @@
         document.getElementById('stats').innerText = `TOTAL: ${perc}%`;
         
         if(perc === 100) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-        saveCloud();
+        saveToCloud();
     }
 
-    function saveCloud() {
+    function saveToCloud() {
         const uid = auth.currentUser.uid;
-        db.collection("usuarios").doc(uid).collection("dias").doc(todayStr.replace(/\//g, '-')).set(agentData);
+        db.collection("usuarios").doc(uid).collection("dias").doc(todayID).set(agentData);
     }
 
     function addTodo() {
         const input = document.getElementById('todo-input');
         if(input.value) {
-            agentData.todos.push({ text: input.value, completed: false });
+            // PACTO: ID definido por timestamp + nome tarefa
+            agentData.todos.push({ text: input.value, completed: false, id: Date.now() });
             input.value = '';
-            updateUI();
+            updateBoard();
         }
     }
 
-    function toggleTodo(i) { agentData.todos[i].completed = !agentData.todos[i].completed; updateUI(); }
-    function deleteTodo(i) { agentData.todos.splice(i, 1); updateUI(); }
+    function toggleTask(i) { agentData.todos[i].completed = !agentData.todos[i].completed; updateBoard(); }
+    function deleteTask(i) { agentData.todos.splice(i, 1); updateBoard(); }
 
-    // 5. Histórico e Resumo
-    async function loadHistory() {
-        const uid = auth.currentUser.uid;
-        const snap = await db.collection("usuarios").doc(uid).collection("dias").limit(14).get();
+    // 5. Bolinhas de Histórico Flutuantes
+    async function updateHistory(uid) {
+        const snap = await db.collection("usuarios").doc(uid).collection("dias").orderBy("__name__", "desc").limit(10).get();
         const grid = document.getElementById('history-grid');
         grid.innerHTML = '';
         
         let streak = 0;
-        snap.forEach((doc, index) => {
-            const data = doc.data();
+        snap.docs.reverse().forEach((doc, idx) => {
+            const d = doc.data();
             const dot = document.createElement('button');
-            dot.className = `day-dot ${data.percent === 100 ? 'full' : ''}`;
-            dot.innerText = index + 1;
-            dot.onclick = () => alert(`Dia ${doc.id}\nStatus: ${data.percent}%\nMissões: ${data.todos.length}`);
+            dot.className = `day-dot ${d.percent === 100 ? 'completed' : ''}`;
+            dot.innerText = idx + 1;
+            
+            // Resumo no hover/clique
+            const summary = `Dia ${doc.id}: ${d.percent}% concluído`;
+            dot.setAttribute('data-summary', summary);
+            dot.onclick = () => alert(summary);
+            
             grid.appendChild(dot);
-            if(data.percent === 100) streak++;
+            if(d.percent === 100) streak++;
         });
         document.getElementById('streak-display').innerText = `🔥 ${streak} dias`;
     }
 
-    // 6. Relatório Ticket de Mercado
-    function generateTicketPDF() {
-        const ticket = document.createElement('div');
-        ticket.className = 'ticket-receipt';
-        
-        let itemsHTML = agentData.todos.map(t => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;">
-                <span>${t.text.toUpperCase()}</span>
-                <span>${t.completed ? 'OK' : '--'}</span>
-            </div>
-        `).join('');
-
-        ticket.innerHTML = `
-            <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:10px; margin-bottom:10px;">
-                <h2 style="margin:0;">RELATÓRIO</h2>
-                <small>ALVORADA TÁTICO</small><br>
-                <small>${todayStr}</small>
-            </div>
-            <div style="border-bottom:1px dashed #000; padding-bottom:10px; margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
-                    <span>TAREFA</span><span>STATUS</span>
-                </div>
-                ${itemsHTML}
-            </div>
-            <div style="text-align:right; font-weight:bold;">TOTAL: ${agentData.percent}%</div>
-            <div style="text-align:center; margin-top:20px; font-size:10px;">*** OBRIGADO AGENTE ***</div>
-        `;
-
-        html2pdf().set({ margin: 10, filename: 'ticket-alvorada.pdf', jsPDF: { unit: 'mm', format: [80, 150] } }).from(ticket).save();
-    }
-
-    // 7. DarkMode e Fullscreen
+    // 6. Tema e Fullscreen
     function toggleTheme() {
-        const current = document.documentElement.getAttribute('data-theme');
-        const next = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', next);
-        document.getElementById('theme-btn').innerText = next === 'dark' ? '☀️' : '🌙';
+        const root = document.documentElement;
+        const isDark = root.getAttribute('data-theme') === 'dark';
+        root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        document.getElementById('theme-btn').innerText = isDark ? '🌙' : '☀️';
     }
 
     function toggleFullScreen() {
